@@ -2,13 +2,10 @@ import os
 
 import s3fs
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings
+from openai import AsyncOpenAI
 from qdrant_client import QdrantClient
 
 load_dotenv(override=True)
-
-# Themes
-THEME_FILTER = ["Heures supplémentaires (contingent, majoration)"]
 
 # Chunking
 CHUNK_SIZE = 800
@@ -26,8 +23,15 @@ EMBEDDING_MODEL = "qwen3-embedding-8b"
 EMBEDDING_SIZE = 4096               # to be changed depending on the model
 EMBED_CONCURRENCY = 10
 
-embeddings = OpenAIEmbeddings(
-    model=EMBEDDING_MODEL,
+llm_client = AsyncOpenAI(
     base_url=os.environ["LLM_API_URL"],
-    api_key=os.environ["LLM_API_KEY"]
+    api_key=os.environ["LLM_API_KEY"],
+)
+
+
+# Vector storage
+qdrant_client = QdrantClient(
+    url=os.environ.get("QDRANT_API_URL", "http://qdrant:6333"),
+    api_key=os.environ.get("QDRANT_API_KEY", None),
+    timeout=60
 )

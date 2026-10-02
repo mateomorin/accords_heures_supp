@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: legifrance-chunk-
+spec:
+  entrypoint: main-dag
+  parallelism: 4
+  arguments:
+    parameters:
+      - name: collection
+        value: "accords"
+  ttlStrategy:
+    secondsAfterCompletion: 86400
+  podGC:
+    strategy: OnPodSuccess
+
+  templates:
+    - name: main-dag
+      dag:
+        tasks:
+          - name: chunk-dataset
+            template: chunk-cpu
+            arguments:
+              parameters:
+                - name: data_folder
+                  value: "{{item.data_folder}}"
+                - name: themes
+                  value: "{{item.themes}}"
+                - name: collection
+                  value: "{{workflow.parameters.collection}}"
+            withItems:
+              - { data_folder: "acco_data_2018", themes: "all" }
+              - { data_folder: "acco_data_2019", themes: "all" }
+              - { data_folder: "acco_data_2020", themes: "all" }
+              - { data_folder: "acco_data_2021", themes: "all" }
+              - { data_folder: "acco_data_2022", themes: "all" }
+              - { data_folder: "acco_data_2023", themes: "all" }
+              - { data_folder: "acco_data_2024", themes: "all" }
+              - { data_folder: "acco_data_2025", themes: "all" }
+
+    # --- TEMPLATE CPU ---
+    - name: chunk-cpu
+      inputs:
+        parameters:
+          - name: data_folder
+          - name: themes
+          - name: collection
+      # Si le pod crash (OOM, éviction de nœud, erreur réseau, ...), Argo relance le script.
+      # Grâce aux checkpoints par shard (.done sur S3) et aux IDs de points déterministes
+      # (upsert idempotent), seuls les shards non terminés sont retraités, sans doublons.
+      # "Always" couvre aussi les OOMKilled (considérés comme des échecs, pas des erreurs).
+      retryStrategy:
+        limit: 3
+        retryPolicy: "Always"
+        backoff:
+          duration: "30s"
+          factor: "2"
+      script:
+        image: "inseefrlab/onyxia-vscode-python:py3.13.5"
+        imagePullPolicy: Always
+        command: ["/bin/bash"]
+        source: |
+          set -euo pipefail
+
+          git clone --depth 1 -b main https://github.com/mateomorin/accords_heures_supp.git
+          cd accords_heures_supp
+
+          echo "Chunking + embeddings pour {{inputs.parameters.data_folder}} (themes: {{inputs.parameters.themes}})..."
+          uv run python src/chunking/chunk_markdown.py \
+            --data_folder "{{inputs.parameters.data_folder}}" \
+            --themes "{{inputs.parameters.themes}}" \
+            --collection "{{inputs.parameters.collection}}"
+        resources:
+          limits:
+            cpu: "4000m"
+            memory: "12Gi"
+          requests:
+            cpu: "1000m"
+            memory: "4Gi"
+        env:
+          - name: LLM_API_URL
+            valueFrom: { secretKeyRef: { name: llm-lab-api, key: LLM_API_URL } }
+          - name: LLM_API_KEY
+            valueFrom: { secretKeyRef: { name: llm-lab-api, key: LLM_API_KEY } }
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom: { secretKeyRef: { name: s3-creds-legifrance, key: AWS_ACCESS_KEY_ID } }
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom: { secretKeyRef: { name: s3-creds-legifrance, key: AWS_SECRET_ACCESS_KEY } }
+          - name: AWS_SESSION_TOKEN
+            valueFrom: { secretKeyRef: { name: s3-creds-legifrance, key: AWS_SESSION_TOKEN } }
+          - name: QDRANT_API_URL
+            valueFrom: { secretKeyRef: { name: qdrant-creds, key: QDRANT_API_URL, optional: true } }
+          - name: QDRANT_API_KEY
+            valueFrom: { secretKeyRef: { name: qdrant-creds, key: QDRANT_API_KEY, optional: true } }
