@@ -8,7 +8,7 @@ spec:
   arguments:
     parameters:
       - name: collection
-        value: "accords"
+        value: "accords_heures_supp"
   ttlStrategy:
     secondsAfterCompletion: 86400
   podGC:
@@ -29,14 +29,15 @@ spec:
                 - name: collection
                   value: "{{workflow.parameters.collection}}"
             withItems:
-              - { data_folder: "acco_data_2018", themes: "all" }
-              - { data_folder: "acco_data_2019", themes: "all" }
-              - { data_folder: "acco_data_2020", themes: "all" }
-              - { data_folder: "acco_data_2021", themes: "all" }
-              - { data_folder: "acco_data_2022", themes: "all" }
-              - { data_folder: "acco_data_2023", themes: "all" }
-              - { data_folder: "acco_data_2024", themes: "all" }
-              - { data_folder: "acco_data_2025", themes: "all" }
+              - { data_folder: "acco_data_2017_9_10_11_12", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2018", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2019", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2020", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2021", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2022", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2023", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2024", themes: "Heures supplémentaires (contingent, majoration)" }
+              - { data_folder: "acco_data_2025", themes: "Heures supplémentaires (contingent, majoration)" }
 
     # --- TEMPLATE CPU ---
     - name: chunk-cpu
@@ -66,7 +67,7 @@ spec:
           cd accords_heures_supp
 
           echo "Chunking + embeddings pour {{inputs.parameters.data_folder}} (themes: {{inputs.parameters.themes}})..."
-          uv run python src/chunking/chunk_markdown.py \
+          uv run src/chunking/chunk_markdown.py \
             --data_folder "{{inputs.parameters.data_folder}}" \
             --themes "{{inputs.parameters.themes}}" \
             --collection "{{inputs.parameters.collection}}"

@@ -63,7 +63,7 @@ def parse_theme_filter(value: str):
     """
     if value.strip().lower() == "all":
         return "all"
-    themes = [t.strip().strip('"') for t in value.split(",") if t.strip().strip('"')]
+    themes = [str(m.strip('"')) for m in value.split('","')]
     if not themes:
         raise argparse.ArgumentTypeError(
             """Themes must be 'all' or themes delimited by '"' and separated by commas."""
@@ -456,6 +456,7 @@ def main():
         help="Ignore checkpoints and reprocess every shard.",
     )
     args = parser.parse_args()
+    logger.info(args.themes)
     asyncio.run(run(args))
 
 
