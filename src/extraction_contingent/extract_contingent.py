@@ -231,7 +231,7 @@ async def process_year(year: int, args, chain, query) -> int:
 
     full = pd.concat(shard_dfs, ignore_index=True)
     n_err = int(full["erreur"].notna().sum())
-    n_pos = int((full["presence_contingent_conventionnel"] is True).sum())
+    n_pos = int((full["presence_contingent_conventionnel"].eq(True)).sum())
     logger.info(f"[{year}] {len(full)} references | {n_pos} with contingent conventionnel | {n_err} errors")
 
     if n_err == 0:
