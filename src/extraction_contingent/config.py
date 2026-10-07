@@ -8,6 +8,8 @@ from qdrant_client import QdrantClient
 
 load_dotenv(override=True)
 
+
+# S3 storage
 fs = s3fs.S3FileSystem(
     endpoint_url="https://minio.lab.sspcloud.fr",
     client_kwargs={"region_name": "us-east-1"},
@@ -37,11 +39,16 @@ vector_store = QdrantVectorStore(
     embedding=embeddings,
 )
 
+YEAR_KEY = "metadata.anneeSignature"
+REF_KEY = "metadata.reference"
+DEFAULT_YEARS = list(range(2017, 2026))
+
 # LLM
 LLM_MODEL = "gemma4-26b-moe"
 llm = ChatOpenAI(
     base_url=os.environ["LLM_API_URL"],
     api_key=os.environ["LLM_API_KEY"],
     model=LLM_MODEL,
-    temperature=0
+    temperature=0,
+    timeout=120
 )
