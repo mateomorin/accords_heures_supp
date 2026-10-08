@@ -1,2 +1,3 @@
-# accords_heures_supp
-Extracting useful information about overtime at work in French company agreements.
+# Accords Heures Supp'
+
+This project aims to extract useful information about overtime at work in French company agreements.
