@@ -1,0 +1,8 @@
+Analyse les extraits de l'accord d'entreprise ci-dessous et extrait les informations relatives au contingent d'heures supplémentaires selon le schéma JSON demandé.
+
+### Extraits du document :
+---
+{context}
+---
+
+Si le texte ne mentionne aucun taux ou règle explicite pour les heures supplémentaires, renvoie `presence_regle_conventionnelle = False` et `regles_majorations = []`.
