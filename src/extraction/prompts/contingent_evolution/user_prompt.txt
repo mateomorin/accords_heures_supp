@@ -1,8 +1,12 @@
-Analyse les extraits de l'accord d'entreprise ci-dessous et extrait les informations relatives au contingent d'heures supplémentaires selon le schéma JSON demandé.
+Analyse les extraits de l'accord d'entreprise ci-dessous.
+
+Détermine le contingent d'heures supplémentaires applicable, repère s'il remplace ou révise un contingent antérieur (accord précédent, branche ou contingent légal), et extrait les valeurs avant et après selon le schéma JSON demandé.
 
 ### Extraits du document :
 ---
 {context}
 ---
 
-Si le texte ne contient aucun contingent d'heures supplémentaires conventionnel, réponds en mettant `presence_contingent_conventionnel` à `False`.
+Rappels :
+- Si le texte ne contient aucun contingent d'heures supplémentaires conventionnel, réponds en mettant `presence_contingent_conventionnel` à `False`.
+- Si le texte ne mentionne aucun remplacement ni jugement d'inadaptation d'un contingent passé/légal, mets `presence_substitution` à `False`.
