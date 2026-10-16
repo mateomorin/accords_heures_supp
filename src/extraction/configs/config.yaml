@@ -1,0 +1,35 @@
+defaults:
+  - _self_
+
+args:
+  type: contingent        # Information to extract (name of a subfolder in the project)
+  year: 2023              # Signature year to treat
+  top_k: 5                # Number of chunks per document
+  concurrency: 5          # Max number of (retrieval + LLM) per process
+  shard_size: 200         # Number of references per shard to save on S3
+  skip_existing: True     # Ignore years where parquet file already exists
+  llm_retries: 4          # Number of LLM API call attemps (potential backoff)
+  limit: 0                # (debug) Only treat the first N references
+
+data_storage:
+  base_dir: "s3://mateomorin/legifrance"
+  metadata_path: "${data_storage.base_dir}/metadata/acco_metadata_${args.year}.parquet"
+  extraction_dir: "${data_storage.base_dir}/extraction/${args.type}/year=${args.year}"
+
+vector_storage:
+  qdrant_collection: "accords_heures_supp"
+  year_key: "metadata.anneeSignature"
+  ref_key: "metadata.reference"
+  timeout: 60
+
+prompts:
+  prompt_dir: "prompts/contingent"
+  query_file: "${prompts.prompt_dir}/query.txt"
+  system_prompt_file: "${prompts.prompt_dir}/system_prompt.txt"
+  user_prompt_file: "${prompts.prompt_dir}/user_prompt.txt"
+
+llm:
+  embedding_model: "qwen3-embedding-8b"
+  llm_model: "gemma4-26b-moe"
+  temperature: 0
+  timeout: 120

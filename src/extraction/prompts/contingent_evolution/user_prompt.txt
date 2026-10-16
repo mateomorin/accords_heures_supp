@@ -1,0 +1,8 @@
+Analyse les extraits de l'accord d'entreprise ci-dessous et extrait les informations relatives au contingent d'heures supplémentaires selon le schéma JSON demandé.
+
+### Extraits du document :
+---
+{context}
+---
+
+Si le texte ne contient aucun contingent d'heures supplémentaires conventionnel, réponds en mettant `presence_contingent_conventionnel` à `False`.
