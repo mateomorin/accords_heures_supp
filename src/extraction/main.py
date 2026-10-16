@@ -169,7 +169,7 @@ async def extract_one(
             row.update(res_dict)
 
         except Exception as e:
-            logger.error(f"[{year}] Error with {reference}: {e!r}")
+            logger.error(f"[{year}] Error with {ref_value}: {e!r}")
             row["erreur"] = repr(e)[:500]
 
     return row
@@ -252,10 +252,8 @@ def finalize_year(full_data: pd.DataFrame, year: int, final_path: str, fs: S3Fil
     Export the final data and show characteristics
     """
     n_err = int(full_data["erreur"].notna().sum())
-    n_pos = int(full_data["presence_contingent_conventionnel"].eq(True).sum())
 
-    logger.info(f"[{year}] {len(full_data)} references | {n_pos} contingents conventionnels | "
-                f"{n_err} errors")
+    logger.info(f"[{year}] {len(full_data)} references | {n_err} errors")
 
     if n_err == 0:
         full_data.to_parquet(path=final_path, filesystem=fs)
@@ -294,8 +292,7 @@ async def process_year(
         qdrant_collection=cfg.vector_storage.qdrant_collection,
         ref_key=cfg.vector_storage.ref_key,
         year_key=cfg.vector_storage.year_key,
-        year_value=args.year,
-        limit=args.limit
+        year_value=args.year
     )
     if args.limit:
         refs = refs[: args.limit]
