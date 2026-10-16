@@ -14,7 +14,7 @@ fs = s3fs.S3FileSystem(
     endpoint_url="https://minio.lab.sspcloud.fr",
     client_kwargs={"region_name": "us-east-1"},
 )
-S3_OUTPUT_PATH = "s3://mateomorin/legifrance/extraction_heures_supp/"
+S3_OUTPUT_PATH = "s3://mateomorin/legifrance/extraction_majoration/"
 
 # Embeddings
 EMBEDDING_MODEL = "qwen3-embedding-8b"
