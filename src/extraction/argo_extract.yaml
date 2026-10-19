@@ -7,7 +7,7 @@ spec:
   podMetadata:
     annotations:
       workflows.argoproj.io/description: "no-task-results"
-  parallelism: 2
+  parallelism: 1
   templates:
     - name: main-dag
       dag:

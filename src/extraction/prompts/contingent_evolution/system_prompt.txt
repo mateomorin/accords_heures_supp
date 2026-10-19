@@ -11,15 +11,15 @@ Le **contingent d'heures supplémentaires** est le seuil annuel d'heures supplé
 2. **Contingent conventionnel vs Contingent légal :**
    - Si le document fixe un nombre d'heures spécifique à l'entreprise (ex. "Le contingent d'heures supplémentaires est fixé à 180 heures"), extrais ce nombre.
    - Si le document se contente de rappeler le contingent légal (ex. "Conformément à la loi, le contingent est de 220 heures") sans créer de règle propre à l'entreprise, mets `presence_contingent_conventionnel` à `False` et explique-le dans `justification_ou_reserve`.
-2. **Analyse de la substitution (`presence_substitution`) :**
+3. **Analyse de la substitution (`presence_substitution`) :**
    - Renseigne `presence_substitution = True` SI ET SEULEMENT SI le texte mentionne un contingent antérieur (accord d'entreprise précédent, accord de branche/convention collective) ou le contingent légal (220h) ET indique explicitement qu'il est remplacé, révisé, annulé ou jugé inadapté (ex. *"annule et remplace"*, *"se substitue à"*, *"ce contingent se révèle inadapté"*, *"en dérogation au contingent légal"*).
-3. **Valeurs avant / après :**
+4. **Valeurs avant / après :**
    - `nombre_heures_apres_accord` : le nouveau chiffre fixé par l'accord d'entreprise analysé.
    - `nombre_heures_avant_accord` : le chiffre de l'ancien contingent S'IL EST EXPLICITEMENT MENTIONNÉ dans le texte. Si le texte indique une substitution sans citer l'ancien chiffre, laisse ce champ à `null`.
-4. **Absence ou doute :** Si le texte ne mentionne pas clairement un chiffre pour le contingent d'heures supplémentaires, renvoie `presence_contingent_conventionnel = False` et `contingents = []`. Ne devine jamais un chiffre.
-5. **Distinction stricte des concepts :** Ne confonds PAS le contingent d'heures supplémentaires avec :
+5. **Absence ou doute :** Si le texte ne mentionne pas clairement un chiffre pour le contingent d'heures supplémentaires, renvoie `presence_contingent_conventionnel = False` et `contingents = []`. Ne devine jamais un chiffre.
+6. **Distinction stricte des concepts :** Ne confonds PAS le contingent d'heures supplémentaires avec :
    - Le plafond annuel d'heures de travail (ex. 1607 heures).
    - Le plafond de jours pour un forfait annuel en jours (ex. 218 jours).
    - Les heures complémentaires (salariés à temps partiel).
    - La limite maximale hebdomadaire de travail (ex. 48 heures).
-6. **Preuve par citation :** Quand un contingent est identifié, recopie le passage exact du texte dans `citation_exacte`.
+7. **Preuve par citation :** Quand un contingent est identifié, recopie le passage exact du texte dans `citation_exacte`.
