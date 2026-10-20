@@ -23,7 +23,7 @@ vector_storage:
   timeout: 60
 
 prompts:
-  prompt_dir: "prompts/contingent"
+  prompt_dir: "prompts/${args.type}"
   query_file: "${prompts.prompt_dir}/query.txt"
   system_prompt_file: "${prompts.prompt_dir}/system_prompt.txt"
   user_prompt_file: "${prompts.prompt_dir}/user_prompt.txt"

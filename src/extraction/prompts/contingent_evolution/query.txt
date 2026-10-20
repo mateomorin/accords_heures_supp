@@ -1,1 +1,4 @@
 Query: contingent heures supplémentaires
+Query: relever augmenter contingent annuel heures supplémentaires
+Query: réduire diminuer contingent annuel heures supplémentaires
+Query: dérogation convention collective heures supplémentaires

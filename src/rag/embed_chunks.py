@@ -309,7 +309,10 @@ async def embed_and_upsert_batch(
             id=point_id,
             vector=vector,
             # Layout expected by langchain_qdrant.QdrantVectorStore
-            payload={"page_content": doc.page_content, "metadata": doc.metadata},
+            payload={
+                "page_content": doc.page_content,
+                "metadata": {**doc.metadata, "chunk_id": str(point_id)}
+            },
         )
         for (point_id, doc), vector in zip(batch, vectors)
     ]

@@ -43,11 +43,11 @@ def create_prompt(system_prompt_file: str, user_prompt_file: str) -> ChatPromptT
     return ChatPromptTemplate.from_messages([("system", system_prompt), ("human", user_prompt)])
 
 
-def create_query(query_file) -> str:
+def create_queries(query_file) -> list[str]:
     """
     Retrieve query from text file for similarity search.
     """
-    return (SCRIPT_DIR / query_file).read_text(encoding="utf-8").strip()
+    return (SCRIPT_DIR / query_file).read_text(encoding="utf-8").split("\n")
 
 
 # --------------------------------------------------------------------------- #
@@ -110,13 +110,21 @@ def retriever_factory(
     vector_store: VectorStore,
     ref_key: str,
     ref_value: str,
-    top_k: int
+    top_k: int,
+    exclude_point_ids: list[str | int] | None = None
 ) -> VectorStoreRetriever:
     """
     RAG for the specific reference
     """
+    flt = reference_filter(ref_key=ref_key, ref_value=ref_value)
+
+    if exclude_point_ids:
+        flt.must_not = [
+            models.HasIdCondition(has_id=exclude_point_ids)
+        ]
+
     return vector_store.as_retriever(
-        search_kwargs={"k": top_k, "filter": reference_filter(ref_key=ref_key, ref_value=ref_value)}
+        search_kwargs={"k": top_k, "filter": flt}
     )
 
 
@@ -128,14 +136,16 @@ async def extract_one(
     ref_value: str,
     year: int,
     chain: Runnable,
-    query: str,
+    queries: list[str],
     top_k: int,
     vector_store: VectorStore,
     structured_output: BaseModel,
     semaphore: asyncio.Semaphore
 ) -> dict:
     """
-    Extract data from the document reference.
+    Extract data from the document reference using multiple queries.
+    - First query fetches top_k chunks.
+    - Subsequent queries fetch 1 unique chunk each (if not already retrieved).
     """
     extracted_data = {field_name: None for field_name in structured_output.model_fields}
     row = {
@@ -147,20 +157,40 @@ async def extract_one(
     }
     async with semaphore:
         try:
-            retriever = retriever_factory(
-                vector_store=vector_store,
-                ref_key=ref_key,
-                ref_value=ref_value,
-                top_k=top_k
-            )
-            docs = await retriever.ainvoke(query)
-            row["n_chunks"] = len(docs)
+            if not queries:
+                row["erreur"] = "Aucune requête fournie."
+                return row
 
-            if not docs:
+            # Chunk id = point id
+            retrieved_chunks = []
+            seen_point_ids = set()
+            point_id = 0
+
+            for i, query in enumerate(queries):
+                current_k = top_k if i == 0 else 1
+                retriever = retriever_factory(
+                    vector_store=vector_store,
+                    ref_key=ref_key,
+                    ref_value=ref_value,
+                    top_k=current_k,
+                    exclude_point_ids=list(seen_point_ids) if seen_point_ids else None
+                )
+
+                chunks = await retriever.ainvoke(query)
+                for chunk in chunks:
+                    point_id = chunk.metadata["chunk_id"]
+
+                    if point_id not in seen_point_ids:
+                        seen_point_ids.add(point_id)
+                        retrieved_chunks.append(chunk)
+
+            row["n_chunks"] = len(retrieved_chunks)
+
+            if not retrieved_chunks:
                 row["erreur"] = "Aucun chunk retrouvé pour cette référence."
                 return row
 
-            context_text = "\n\n".join(d.page_content for d in docs)
+            context_text = "\n\n".join(d.page_content for d in chunks)
             res = await chain.ainvoke({"context": context_text})
             if res is None:
                 raise ValueError("Sortie structurée vide (parsing LLM échoué)")
@@ -200,7 +230,7 @@ async def process_shard(
     n_shards: int,
     chain: Runnable,
     services: ServiceContainer,
-    query: str,
+    queries: list[str],
     top_k: int,
     structured_output: BaseModel,
     semaphore: asyncio.Semaphore,
@@ -229,7 +259,7 @@ async def process_shard(
             ref_value=ref,
             year=year,
             chain=chain,
-            query=query,
+            queries=queries,
             top_k=top_k,
             structured_output=structured_output,
             vector_store=services.vector_store,
@@ -271,7 +301,7 @@ async def process_year(
     cfg: DictConfig,
     services: ServiceContainer,
     chain: Runnable,
-    query: str,
+    queries: list[str],
     structured_output: BaseModel
 ) -> int:
     """
@@ -316,7 +346,7 @@ async def process_year(
             n_shards=n_shards,
             chain=chain,
             services=services,
-            query=query,
+            queries=queries,
             top_k=args.top_k,
             structured_output=structured_output,
             semaphore=semaphore
@@ -357,14 +387,14 @@ async def main_async(cfg: DictConfig) -> int:
     )
 
     # Extraction ready
-    query = create_query(query_file=cfg.prompts.query_file)
+    queries = create_queries(query_file=cfg.prompts.query_file)
 
     # Exctract data for the desired year
     total_errors = await process_year(
         cfg=cfg,
         services=services,
         chain=chain,
-        query=query,
+        queries=queries,
         structured_output=structured_output
     )
 
