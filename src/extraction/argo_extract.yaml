@@ -46,8 +46,8 @@ spec:
           git clone https://github.com/mateomorin/accords_heures_supp.git
           cd accords_heures_supp
 
-          echo "Extraction du contingent pour l'année {{inputs.parameters.year}}..."
-          uv run python src/extraction/main.py \
+          echo "Extraction pour l'année {{inputs.parameters.year}}..."
+          uv run src/extraction/main.py \
             args.type={{inputs.parameters.type}} \
             args.year={{inputs.parameters.year}} \
             args.concurrency={{inputs.parameters.concurrency}}
@@ -73,3 +73,9 @@ spec:
             valueFrom: { secretKeyRef: { name: s3-creds-legifrance, key: AWS_SECRET_ACCESS_KEY } }
           - name: AWS_SESSION_TOKEN
             valueFrom: { secretKeyRef: { name: s3-creds-legifrance, key: AWS_SESSION_TOKEN } }
+          - name: LANGFUSE_SECRET_KEY
+            valueFrom: { secretKeyRef: { name: langfuse-creds, key: LANGFUSE_SECRET_KEY } }
+          - name: LANGFUSE_PUBLIC_KEY
+            valueFrom: { secretKeyRef: { name: langfuse-creds, key: LANGFUSE_PUBLIC_KEY } }
+          - name: LANGFUSE_BASE_URL
+            valueFrom: { secretKeyRef: { name: langfuse-creds, key: LANGFUSE_BASE_URL } }

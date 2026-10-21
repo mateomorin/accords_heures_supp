@@ -8,7 +8,7 @@ args:
   concurrency: 5          # Max number of (retrieval + LLM) per process
   shard_size: 200         # Number of references per shard to save on S3
   skip_existing: True     # Ignore years where parquet file already exists
-  llm_retries: 4          # Number of LLM API call attemps (potential backoff)
+  llm_retries: 1          # Number of LLM API call attemps (potential backoff)
   limit: 0                # (debug) Only treat the first N references
 
 data_storage:

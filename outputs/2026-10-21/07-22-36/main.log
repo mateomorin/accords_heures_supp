@@ -1,0 +1,25 @@
+[2026-10-21 07:22:36,802][aiobotocore.credentials][INFO] - Found credentials in environment variables.
+[2026-10-21 07:22:41,442][__main__][INFO] - [2018] 89331 chunks scanned → 2127 distinct references
+[2026-10-21 07:22:42,008][__main__][ERROR] - [2018] Error with A00518000691: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:42,043][__main__][ERROR] - [2018] Error with A00118003143: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:42,487][__main__][ERROR] - [2018] Error with A00618004693: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:42,593][__main__][ERROR] - [2018] Error with A00218002053: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:42,968][__main__][ERROR] - [2018] Error with A00618004706: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:43,039][__main__][ERROR] - [2018] Error with A00218002148: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:43,378][__main__][ERROR] - [2018] Error with A00618004711: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:43,515][__main__][ERROR] - [2018] Error with A00218002182: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:43,855][__main__][ERROR] - [2018] Error with A00118003092: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:43,988][__main__][ERROR] - [2018] Error with A00618004717: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:44,369][__main__][ERROR] - [2018] Error with A00218002190: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:44,489][__main__][ERROR] - [2018] Error with A00618004754: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:44,855][__main__][ERROR] - [2018] Error with A00219002254: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:44,981][__main__][ERROR] - [2018] Error with A00118003093: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:45,356][__main__][ERROR] - [2018] Error with A00118003027: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:45,480][__main__][ERROR] - [2018] Error with A00318001644: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:45,823][__main__][ERROR] - [2018] Error with A00118003096: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:45,939][__main__][ERROR] - [2018] Error with A00318001678: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:46,525][__main__][ERROR] - [2018] Error with A00118003095: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:46,643][__main__][ERROR] - [2018] Error with A00419000660: TypeError("LangchainCallbackHandler.__init__() got an unexpected keyword argument 'trace_name'")
+[2026-10-21 07:22:46,716][__main__][INFO] - [2018] 20 references | 20 errors
+[2026-10-21 07:22:46,716][__main__][WARNING] - [2018] Export has been canceled (20 errors).
+[2026-10-21 07:22:46,721][__main__][ERROR] - 20 references with errors → exit 1 (Argo will start the pod again).

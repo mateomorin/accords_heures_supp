@@ -8,6 +8,7 @@ import pandas as pd
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables.base import Runnable
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
+from langfuse.langchain import CallbackHandler
 from omegaconf import DictConfig
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
@@ -20,6 +21,7 @@ from services import ServiceContainer
 
 
 SCRIPT_DIR = Path(__file__).parent
+langfuse_handler = CallbackHandler()
 
 # --------------------------------------------------------------------------- #
 # Logging
@@ -190,8 +192,21 @@ async def extract_one(
                 row["erreur"] = "Aucun chunk retrouvé pour cette référence."
                 return row
 
-            context_text = "\n\n".join(d.page_content for d in chunks)
-            res = await chain.ainvoke({"context": context_text})
+            context_text = "\n\n".join(chunk.page_content for chunk in retrieved_chunks)
+            res = await chain.ainvoke(
+                {"context": context_text},
+                config={
+                    "callbacks": [langfuse_handler],
+                    "run_name": f"extraction-{ref_value}",
+                    "tags": [f"year-{year}"],
+                    "metadata": {
+                        "reference": ref_value,
+                        "n_chunks": len(retrieved_chunks),
+                        "langfuse_user_id": ref_value,
+                        "langfuse_session_id": f"year-{year}"
+                    }
+                }
+            )
             if res is None:
                 raise ValueError("Sortie structurée vide (parsing LLM échoué)")
 

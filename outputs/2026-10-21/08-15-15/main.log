@@ -1,0 +1,2 @@
+[2026-10-21 08:15:15,730][aiobotocore.credentials][INFO] - Found credentials in environment variables.
+[2026-10-21 08:15:20,477][__main__][INFO] - [2018] 89331 chunks scanned → 2127 distinct references
