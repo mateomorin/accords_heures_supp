@@ -30,6 +30,6 @@ prompts:
 
 llm:
   embedding_model: "qwen3-embedding-8b"
-  llm_model: "gemma4-26b-moe"
+  llm_model: "qwen3-6-35b-moe"
   temperature: 0
   timeout: 120
