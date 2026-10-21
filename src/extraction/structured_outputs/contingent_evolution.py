@@ -10,9 +10,9 @@ class TypeSubstitution(str, Enum):
 
 
 class DetailContingent(BaseModel):
-    categorie_ou_population: str | None = Field(
-        default="Tous les salariés",
-        description="Population concernée (ex: 'Non-cadres', 'Salariés en modulation', 'Tous les salariés').",
+    categorie_juridique: str | None = Field(
+        default="FIXATION DIRECTE",
+        description="Manière dont le contingent est annoncé : en remplacement d'un précédent, en fixation directe, en simple rappel de textes existants.",
     )
     nombre_heures_fixe: int = Field(
         description="Nombre d'heures du nouveau contingent fixé par l'accord (ex: 180, 220)."
@@ -26,6 +26,10 @@ class DetailContingent(BaseModel):
             "- 'remplacement_accord_anterieur' si l'accord remplace un précédent accord d'entreprise.\n"
             "- 'fixation_directe' si le texte se contente de fixer un contingent à XXX heures sans mentionner de texte remplacé."
         ),
+    )
+    population_concernee: str | None = Field(
+        default="Tous les salariés",
+        description="Population concernée (ex: 'Non-cadres', 'Salariés en modulation', 'Tous les salariés').",
     )
     nombre_heures_avant_accord: int | None = Field(
         default=None,

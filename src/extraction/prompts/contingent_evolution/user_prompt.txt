@@ -1,23 +1,8 @@
-Analyse les extraits de l'accord d'entreprise ci-dessous.
+Analyse l'extrait de l'accord d'entreprise ci-dessous en appliquant strictement toutes les règles de ton system prompt.
 
-Détermine s'il fixe un contingent d'heures supplémentaires, identifie le type de substitution/fixation applicable, et extrais les volumes d'heures (avant / fixe) en respectant strictement le schéma JSON demandé.
+Détermine s'il fixe un contingent d'heures supplémentaires, identifie le type de substitution exact, et extrais les volumes d'heures demandés sous format JSON.
 
 ### Extraits du document :
 ---
 {context}
 ---
-
-### Rappels stricts :
-1. **Règles de détection :**
-   - Si le document fixe ou adapte un contingent propre à l'entreprise, indique `presence_contingent_conventionnel = True`.
-   - Si le texte ne contient aucun contingent d'heures supplémentaires ou se contente de rappeler la loi sans créer de règle propre, indique `presence_contingent_conventionnel = False`.
-
-2. **Interdiction absolue d'extrapoler :**
-   - Ne devine AUCUN chiffre. Ne confonds JAMAIS le contingent avec les paliers/seuils de majoration de salaire (25 %, 50 %, etc.) ou la durée du travail (1607h, 218 jours, etc.).
-   - Si un chiffre antérieur n'est pas écrit noir sur blanc dans l'extrait, laisse `nombre_heures_avant_accord` à `null`.
-
-3. **Classification du type de substitution (`type_substitution`) :**
-   - `remplacement_branche` : si le texte mentionne explicitement remplacer/déroger à la branche.
-   - `remplacement_contingent_legal` : si le texte mentionne explicitement déroger au contingent légal.
-   - `remplacement_accord_anterieur` : si le texte mentionne explicitement remplacer un accord d'entreprise précédent.
-   - `fixation_directe` : si le texte fixe un chiffre sans mentionner de texte antérieur ou de loi qu'il remplacerait.
