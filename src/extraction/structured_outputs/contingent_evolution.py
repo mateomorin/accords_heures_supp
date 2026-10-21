@@ -10,10 +10,6 @@ class TypeSubstitution(str, Enum):
 
 
 class DetailContingent(BaseModel):
-    categorie_juridique: str | None = Field(
-        default="FIXATION DIRECTE",
-        description="Manière dont le contingent est annoncé : en remplacement d'un précédent, en fixation directe, en simple rappel de textes existants.",
-    )
     nombre_heures_fixe: int = Field(
         description="Nombre d'heures du nouveau contingent fixé par l'accord (ex: 180, 220)."
     )
