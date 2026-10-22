@@ -1,4 +1,0 @@
-[2026-10-21 08:07:49,881][aiobotocore.credentials][INFO] - Found credentials in environment variables.
-[2026-10-21 08:07:54,608][__main__][INFO] - [2018] 89331 chunks scanned → 2127 distinct references
-[2026-10-21 08:10:56,786][__main__][INFO] - [2018] 20 references | 0 errors
-[2026-10-21 08:10:56,840][__main__][INFO] - [2018] Final result has been exported to: s3://mateomorin/legifrance/extraction/contingent_evolution/year=2018/extraction_2018.parquet
