@@ -1,4 +1,0 @@
-T00119002012: 1 contingent légal, et 1 contingent réduit sous demande de l'employé
-T01719001288, T02619001071, T06419001167, T02518000317, T07618001163, T07718001055: suppression contingent
-T01119000659: la valeur est cachée, qwen le sait, mais met quand meme une valeur arbitraire
-T01319006016: contingent de 1947h

@@ -1,0 +1,11 @@
+T00119002012: 1 contingent légal, et 1 contingent réduit sous demande de l'employé
+T01719001288, T02619001071, T06419001167, T02518000317, T07618001163, T07718001055, ...: suppression contingent
+T01119000659: la valeur est cachée, qwen le sait, mais met quand meme une valeur arbitraire
+T01319006016: contingent de 1947h
+T02624061259: 220h dans l'objet de l'accord, mais juste avant 360h dans champ d'application, confus
+T05024060768: la phrase du préambule contient un double sens sur le contingent
+T05324060405: 2 contingents dans le meme accord
+T07824062295: "quotas d'heures", confusion entre entreprises et salariés on dirait
+T00423001229: 14511 heures pour le contingent de l'accord de branche au lieu de 145
+T04922007015: Deux contingents différents, dont un barré une fois sur deux
+T07422005892: c'est presque pas du français, deux contingents mentionnés
