@@ -1,0 +1,425 @@
+﻿reference;presence_contingent_conventionnel;population_concernee;nombre_heures_fixe;periode;type_substitution;heures_avant_accord;remarque
+A03118007022;False;;;;;;Hors thème
+A04418009590;False;;;;;;Avenant avec information manquante
+A04518003775;False;;;;;;Pas heures supplémentaires au sens contingent ou majoration
+A07118002627;False;;;;;;Avenant avec information manquante
+A07518031240;True;Ensemble du personnel;330;annuel;remplacement_convention_collective;;
+A07518031298;True;Tous les salariés;290;annuel;fixation_directe;;
+A07518031374;True;Tous les salariés;220;annuel;remplacement_convention_collective;;Cite l'article L 3120-30
+A07518031808;True;Tous les salariés;220;annuel;fixation_directe;;
+A07618006075;False;;;;;;Majoration
+A09518004655;False;;;;;;Hors thème
+T00118000452;True;Personnel sédentaire;220;annuel;fixation_directe;;
+T00119001964;False;;;;;;Hors thème
+T00121003933;False;;;;;;Heures supplémentaires uniquement à la demande de la hiérarchie et soumise à validation du COMEX
+T00124061189;True;Tous les salariés;400;annuel;remplacement_convention_collective;220;
+T00222002371;False;;;;;;Hors thème
+T00222002755;False;;;;;;Hors thème
+T00223002984;False;;;;;;Hors thème
+T00223003019;False;;;;;;Hors thème
+T00224060637;True;Tous les salariés;350;annuel;fixation_directe;;
+T00224060657;True;Tous les salariés;220;annuel;fixation_directe;;
+T00225061056;True;;260;annuel;remplacement_accord_anterieur;220;
+T00225061409;;;;;;;Fichier endommagé
+T00225061419;False;;;;;;Aucun détail donné
+T00321001415;True;Tous les salariés;490;annuel;remplacement_convention_collective;;
+T00419000167;False;;;;;;Majoration
+T00422000937;False;Tous les salariés;220;annuel;;;Rappel
+T00521000868;False;;;;;;Aucun détail donné
+T00619002437;False;;;;;;Hors thème
+T00619002439;False;;;;;;Hors thème
+T00619002954;False;;;;;;Hors thème
+T00620004416;True;Tous les salariés;400;annuel;remplacement_convention_collective;145;Plusieurs heures mentionnées, mais c'est bien 145 à retenir pour l'ancien contingent
+T00623008415;True;Etablissements permanents;520;annuel;remplacement_convention_collective;360;
+T00623008415;True;Etablissements saisonniers;145;trimestriel;remplacement_convention_collective;90;
+T00625062612;True;Tous les salariés;230;annuel;remplacement_convention_collective;130;
+T00723001873;True;Tous les salariés;360;annuel;fixation_directe;;
+T00724060262;True;Tous les salariés;423;annuel;fixation_directe;;
+T00725060454;True;Tous les salariés;425;annuel;remplacement_convention_collective;360;
+T00725060768;True;Tous les salariés;350;annuel;remplacement_convention_collective;145;
+T00824060231;True;Tous les salariés;423;annuel;remplacement_convention_collective;;
+T01022001901;False;;;;;;Avenant avec information manquante
+T01022001921;False;;;;;;Report de la signature
+T01023002359;True;Tous les salariés;440;annuel;fixation_directe;;
+T01025060993;True;Ouvriers et Etam;190;annuel;remplacement_accord_anterieur;130;
+T01221001331;True;Tous les salariés;380;annuel;fixation_directe;;
+T01224060285;True;Salariés en modulation;350;annuel;remplacement_convention_collective;265;
+T01224060285;True;Salariés hors modulation;350;annuel;remplacement_convention_collective;300;
+T01318001989;True;les équipes amenées à travailler en horaires particuliers ou spécifiques sur le site de Cherbourg;220;annuel;remplacement_accord_anterieur;130;
+T01318001989;True;L'équipe d'encadrement du site de Cherbourg;220;annuel;remplacement_accord_anterieur;45;
+T01319005708;False;;;;;;Hors thème
+T01320006968;True;Non-cadre;400;annuel;fixation_directe;;
+T01321013311;True;Tous les salariés;410;annuel;fixation_directe;;
+T01322016669;True;Tous les salariés;380;annuel;remplacement_convention_collective;230;
+T01323017018;False;;;;;;Ni contingent ni majoration
+T01323060842;False;;;;;;Hors thème
+T01419001769;False;;;;;;Hors thème
+T01420002495;False;;;;;;Hors thème
+T01420002716;False;;;;;;Accord vide
+T01420002777;True;Tous les salariés;405;annuel;fixation_directe;;
+T01420003194;True;Tous les salariés;270;annuel;fixation_directe;;
+T01421004887;True;Tous les salariés;280;annuel;fixation_directe;;
+T01421004965;False;;;;;;Hors thème
+T01423007524;False;;;;;;Majoration
+T01424060786;True;Tous les salariés;280;annuel;fixation_directe;;
+T01424061363;True;Tous les salariés;300;annuel;fixation_directe;;Augmentation mentionnée
+T01425061667;False;Tous les salariés;160;annuel;;;Rappel
+T01521000654;True;Tous les salariés;350;annuel;fixation_directe;;
+T01623003128;True;Tous les salariés;300;annuel;fixation_directe;;
+T01719001509;True;SALARIES NON CONCERNES PAR LES MODES D’AMENAGEMENT DU TEMPS DE TRAVAIL SUR L’ANNE ET LE FORFAIT ANNUEL EN JOURS;300;annuel;fixation_directe;;
+T01719001509;True;Tous les salariés à temps complet sauf VRP;220;annuel;fixation_directe;;Clause d'après qui mentionne 300 donc étrange
+T01721003323;False;;;;;;Majoration
+T01818000023;False;;;;;;Hors thème
+T01818000207;True;Personnel sédentaire;400;annuel;remplacement_convention_collective;;
+T01818000207;True;Personnel roulant;470;annuel;remplacement_convention_collective;;
+T01919000425;False;;;;;;Hors thème
+T01920000687;False;;;;;;Hors thème
+T01925060612;True;Tous les salariés;360;annuel;remplacement_accord_anterieur;180;
+T02118000616;False;;;;;;Hors thème
+T02118000638;False;;;;;;Avenant avec information manquante
+T02120002967;True;Ouvrier, Etam, et Cadre non autonome;265;annuel;fixation_directe;;
+T02122004692;True;Ouvrier et Etam;240;annuel;fixation_directe;;
+T02122004708;True;Tous les salariés;220;annuel;remplacement_convention_collective;100;
+T02123005684;True;Tous les salariés;120;annuel;remplacement_accord_anterieur;90;
+T02123005811;False;;;;;;Majoration
+T02123060335;True;Tous les salariés;300;annuel;fixation_directe;;Augmentation mentionnée, max 1907 heures, durée annuelle effective 1752 heures
+T02223060394;False;;;;;;Avenant avec information manquante
+T02224061424;False;;;;;;Hors thème
+T02224061492;False;;;;;;Ni contingent ni majoration
+T02225062404;False;;;;;;Majoration
+T02225062732;;;;;;;Fichier endommagé
+T02418000185;True;Tous les salariés;220;annuel;fixation_directe;;
+T02424060286;True;Tous les salariés;220;annuel;fixation_directe;;
+T02519001077;True;Personnel roulant;300;annuel;remplacement_convention_collective;195;
+T02519001077;True;Personnel sédentaire;300;annuel;remplacement_convention_collective;130;
+T02520001940;False;;;;;;Ni contingent ni majoration
+T02521002771;False;;;;;;Hors thème
+T02524060644;True;Tous les salariés;380;annuel;remplacement_convention_collective;220;
+T02618000337;False;;;;;;Ni contingent ni majoration
+T02619001295;True;Tous les salariés;300;annuel;fixation_directe;;"""Maintenir à un niveau élevé"""
+T02620001694;False;;;;;;Ni contingent ni majoration
+T02620002145;True;Personnel itinérant;350;annuel;fixation_directe;;
+T02620002145;True;Personnel non-itinérant;450;annuel;fixation_directe;;
+T02622003820;True;Salariés durée de travail annualisée;350;annuel;remplacement_convention_collective;90;
+T02622003820;True;Salariés durée travail non-annualisée;350;annuel;remplacement_convention_collective;130;
+T02622003886;False;;;;;;Majoration
+T02623060148;True;Tous les salariés;300;annuel;remplacement_convention_collective;180;145 mentionné dans le préambule également, mais 1810 dérogé dans le corps
+T02624060539;True;Tous les salariés;468;annuel;fixation_directe;;
+T02624061014;True;Tous les salariés;220;annuel;fixation_directe;;
+T02624061022;True;Tous les salariés;350;annuel;remplacement_convention_collective;180;
+T02624061208;True;Agents de maitrise;300;annuel;remplacement_convention_collective;180;
+T02624061209;False;;;;;;Majoration
+T02720001779;True;Tous les salariés;130;annuel;fixation_directe;;
+T02721002556;True;Tous les salariés;315;annuel;remplacement_convention_collective;220;
+T02725061479;True;Tous les salariés;130;annuel;fixation_directe;;Ambiguïté entre rappel et contingent
+T02818000368;True;Tous les salariés;350;annuel;remplacement_convention_collective;;
+T02820001787;True;Tous les salariés;280;annuel;fixation_directe;;Réévaluation mentionnée
+T02822002986;True;Tous les salariés;300;annuel;fixation_directe;;
+T02824060217;True;Tous les salariés;160;annuel;fixation_directe;;
+T02825060916;False;;;;;;Hors thème
+T02919002176;True;Tous les salariés;250;annuel;fixation_directe;;
+T02921005203;False;;;;;;Hors thème
+T02922006692;True;Tous les salariés;390;annuel;remplacement_convention_collective;180;
+T02925062226;False;Personnel du service production;130;annuel;;;Rappel
+T03019001405;True;Ouvriers, Etam et Cadres;300;annuel;fixation_directe;;"""Maintenir à un niveau élevé"""
+T03021003566;True;Tous les salariés;352;annuel;fixation_directe;;
+T03119003025;False;;;;;;Hors thème
+T03119003064;False;;;;;;Hors thème
+T03121010121;True;Tous les salariés;220;annuel;remplacement_convention_collective;180;
+T03122010382;False;;;;;;Hors thème
+T03123014105;True;Tous les salariés;220;annuel;fixation_directe;;
+T03125065510;False;;;;;;Hors thème
+T03220000435;False;;;;;;Hors thème
+T03223001285;False;;;;;;Hors thème
+T03225060596;True;Personnel roulant;260;annuel;remplacement_convention_collective;195;
+T03225060596;True;Personnel sédentaire;260;annuel;remplacement_convention_collective;130;
+T03320004541;True;Salariés et intérimaires;350;annuel;remplacement_contingent_legal;220;On suppose remplacement contingent légal mais les anciens 220 ne sont pas spécifiés
+T03320006489;True;Tous les salariés;270;annuel;fixation_directe;;
+T03321008912;False;;;;;;Majoration
+T03322010177;True;Tous les salariés;400;annuel;remplacement_contingent_legal;220;
+T03322011261;True;Tous les salariés;260;annuel;fixation_directe;;
+T03324061665;True;Personnel intervenant à domicile;220;annuel;fixation_directe;;
+T03324061665;True;Employés, techniciens et cadres intégrés;200;annuel;fixation_directe;;
+T03324062508;True;Tous les salariés;600;annuel;remplacement_convention_collective;190;
+T03324063350;;;;;;;Fichier endommagé
+T03325064906;False;;;;;;Majoration
+T03325065486;True;Tous les salariés;220;annuel;fixation_directe;;
+T03326067389;True;Tous les salariés;220;annuel;remplacement_convention_collective;130;
+T03418000794;True;Tous les salariés;250;annuel;fixation_directe;;
+T03421004916;False;;;;;;Avenant avec information manquante
+T03424062052;True;Salariés et intérimaires;350;annuel;remplacement_convention_collective;150;
+T03425062415;True;Salariés à horaire annualisé;400;annuel;remplacement_convention_collective;145;
+T03425062415;True;Salariés à horaire non-annualisé;400;annuel;remplacement_convention_collective;180;
+T03519004429;True;Tous les salariés;360;annuel;fixation_directe;;"""Maintenir à un niveau élevé"""
+T03520006697;False;;;;;;Majoration
+T03525065600;False;;;;;;Hors thème
+T03620000541;True;Tous les salariés;350;annuel;remplacement_convention_collective;220;
+T03720001404;True;Tous les salariés;380;annuel;fixation_directe;;Augmentation mentionnée
+T03725061229;True;Tous les salariés;380;annuel;remplacement_convention_collective;;
+T03819004145;True;Tous les salariés;360;annuel;remplacement_convention_collective;;
+T03820004927;True;Tous les salariés;300;annuel;remplacement_convention_collective;;
+T03826065571;True;Tous les salariés;500;annuel;remplacement_convention_collective;;
+T03921001267;False;;;;;;Hors thème
+T04021001706;True;Tous les salariés;300;annuel;fixation_directe;;
+T04219002471;False;ETAM hors CE;130;annuel;;;Rappel
+T04219002471;False;Tous les salariés sauf ETAM (hors CE);220;annuel;;;Rappel
+T04220003279;True;Tous les salariés;220;annuel;fixation_directe;;
+T04221004416;True;Tous les salariés;350;annuel;fixation_directe;;
+T04221004634;True;Tous les salariés;220;annuel;remplacement_convention_collective;130;
+T04322001719;False;;;;;;Majoration
+T04419002620;True;Tous les salariés;200;annuel;fixation_directe;;
+T04419003062;False;;;;;;Illisible cas saut de page au lieu de saut de ligne
+T04419005837;True;Tous les salariés;300;annuel;fixation_directe;;
+T04420008643;True;Tous les salariés;220;annuel;remplacement_convention_collective;;
+T04421011378;True;Tous les salariés;280;annuel;remplacement_convention_collective;130;
+T04421012741;True;Tous les salariés;378;annuel;fixation_directe;;
+T04422012837;True;Tous les salariés;130;annuel;fixation_directe;;
+T04422013684;True;Tous les collaborateurs;220;annuel;fixation_directe;;
+T04422014496;False;;;;;;Ni contingent ni majoration
+T04423018000;True;Tous les salariés;150;annuel;fixation_directe;;
+T04423060890;;;;;;;Fichier endommagé
+T04424064086;True;Tous les salariés;230;annuel;fixation_directe;;
+T04425064299;True;Tous les salariés;250;annuel;fixation_directe;;
+T04519000836;False;;;;;;Majoration
+T04520002226;True;Tous les salariés;265;annuel;fixation_directe;;
+T04522004799;True;Tous les salariés;130;annuel;fixation_directe;;Fixation dans l'annexe, donc peut-être rappel
+T04523005713;True;Tous les salariés;360;annuel;fixation_directe;;"""Maintenir à un niveau élevé"""
+T04523060269;False;;;;;;Hors thème
+T04524060739;True;Tous les salariés;220;annuel;remplacement_convention_collective;110;
+T04524060765;False;;;;;;Hors thème
+T04618000072;False;;;;;;Ni contingent ni majoration
+T04620000520;True;Salariés et intérimaires;220;annuel;fixation_directe;;
+T04724060263;True;Tous les salariés;300;annuel;fixation_directe;;
+T04918001317;False;"Ouvriers, Etam Chantier et Etam ""Bureaux d'études""";145;annuel;;;Rappel
+T04919002072;True;Tous les salariés;220;annuel;fixation_directe;;Rappelle le cadre légal, puis fixe au cadre légal
+T04919002279;True;Tous les salariés;380;annuel;fixation_directe;;
+T04921005192;False;;;;;;Hors thème
+T04921006916;True;Tous les salariés;220;annuel;fixation_directe;;
+T04922007233;True;Salariés et intérimaires;240;annuel;fixation_directe;;
+T04922007742;True;Tous les salariés;220;annuel;fixation_directe;;
+T04922008886;False;;;;;;Majoration
+T04923009137;False;Tous les salariés;220;annuel;;;Rappel
+T04923009901;True;Tous les salariés;220;annuel;fixation_directe;;Ambiguité si rappel ou non
+T04923060437;False;;;;;;Hors thème
+T05019001215;False;;;;;;Hors thème
+T05023060023;True;Tous les salariés;220;annuel;fixation_directe;;
+T05121003480;True;Techniciens et agents de maitrise;365;annuel;fixation_directe;;
+T05123005273;False;;;;;;Avenant avec information manquante
+T05123005300;False;;;;;;Hors thème
+T05124060831;True;Tous les salariés;425;annuel;fixation_directe;;
+T05321002906;False;;;;;;Tout l'accord effacé pour anonimisation
+T05419000900;True;Tous les salariés;240;annuel;fixation_directe;;
+T05419001625;True;Tous les salariés;350;annuel;remplacement_convention_collective;220;
+T05420002241;False;;;;;;Ni contingent ni majoration
+T05518000204;False;;;;;;
+T05623060283;True;Tous les salariés;110;annuel;fixation_directe;;
+T05624061513;True;Tous les salariés;220;annuel;fixation_directe;;Perroquet pour les heures supp
+T05625062124;False;Tous les salariés;220;annuel;;;Rappel
+T05718000020;True;ouvriers, Etam et cadres;230;annuel;fixation_directe;;
+T05719002445;True;Tous les salariés;220;annuel;remplacement_convention_collective;130;
+T05720003641;False;;;;;;Hors thème
+T05721004242;False;;;;;;Hors thème
+T05722006082;False;;;;;;Hors thème
+T05722006990;False;;;;;;Hors thème
+T05724060515;True;Tous les salariés;130;annuel;fixation_directe;;
+T05725062937;True;Tous les salariés;370;annuel;remplacement_convention_collective;270;
+T05819000173;False;Tous les salariés;;annuel;;;"""selon règles en vigueur"""
+T06019001680;False;Tous les salariés;;annuel;;;"""selon règles en vigueur"""
+T06020001991;True;Tous les salariés;400;annuel;fixation_directe;;
+T06021003125;False;;;;;;Hors thème
+T06022004901;False;;;;;;Hors thème
+T06022004939;False;;;;;;Hors thème
+T06023005578;True;personnel affecté à des emplois de chauffeurs manutentionnaires et aux activités de NIA;350;annuel;fixation_directe;;
+T06023005578;True;Tous les salariés;220;annuel;fixation_directe;;
+T06024060980;True;Tous les salariés;430;annuel;fixation_directe;;
+T06026062525;True;Tous les salariés;480;annuel;fixation_directe;;
+T06220003957;False;Tous les salariés;220;annuel;;;Rappel
+T06224061722;True;Tous les salariés;300;annuel;fixation_directe;;
+T06225064060;True;Tous les salariés;350;annuel;remplacement_convention_collective;220;
+T06321003413;False;;;;;;Hors thème
+T06322005316;False;;;;;;Ni contingent ni majoration
+T06323005595;False;;;;;;Ni contingent ni majoration
+T06324061442;True;Tous les salariés;350;annuel;fixation_directe;;
+T06325061569;False;Tous les salariés;;annuel;;;Majoration
+T06419001988;True;Tous les salariés;220;annuel;fixation_directe;;
+T06419002165;False;;;;;;Ni contingent ni majoration
+T06518000112;False;Tous les salariés;145;annuel;;;Rappel
+T06520000504;True;Salariés durée de travail annualisée;150;annuel;fixation_directe;;
+T06520000504;True;Salariés durée de travail non-annualisée;200;annuel;fixation_directe;;
+T06620001013;True;Tous les salariés;220;annuel;fixation_directe;;
+T06620001234;False;;;;;;Avenant avec information manquante
+T06625061055;False;;;;;;Repos copensateur seulement, mais mention de 35 heures supplémentaires possibles à rémunérer, donc flou
+T06718000040;True;les salariés des ateliers de production et les collaborateurs du magasin, du service expédition et du contrôle qualité des unités de production et du SAV.;220;annuel;fixation_directe;;
+T06718000974;False;;;;;;Heures supplémentaires pas du tout détaillées
+T06720005049;True;Tous les salariés;450;annuel;fixation_directe;;
+T06720005721;True;Tous les salariés;420;annuel;fixation_directe;;
+T06721007282;False;;;;;;Hors thème
+T06721007975;True;Tous les salariés;175;annuel;fixation_directe;;
+T06722009727;True;Par défaut pour tous;50;annuel;remplacement_accord_anterieur;50;
+T06722009727;True;Sur volontariat pour tous;120;annuel;remplacement_accord_anterieur;50;
+T06722009727;True;Sur volontariat pour le personnel non posté et de maintenance au regards de travaux exceptionnels liés aux projets de site en 2022 et 2023;150;annuel;remplacement_accord_anterieur;50;
+T06723060454;True;Tous les salariés;506;annuel;fixation_directe;;
+T06725063962;True;Tous les salariés;300;annuel;fixation_directe;;
+T06725065611;True;Tous les salariés;220;annuel;remplacement_convention_collective;;
+T06824061173;True;Tous les salariés;330;annuel;fixation_directe;;
+T06918001197;True;Tous les salariés;400;annuel;remplacement_convention_collective;190;
+T06919006616;True;Personnel roulant;220;annuel;remplacement_convention_collective;195;
+T06919006616;True;Personnel sédentaire;220;annuel;remplacement_convention_collective;130;
+T06920012660;False;;;;;;Majoration
+T06920013368;True;Tous les salariés;470;annuel;remplacement_contingent_legal;220;
+T06923060548;True;Tous les salariés;360;annuel;fixation_directe;;
+T06924065283;True;Tous les salariés;300;annuel;remplacement_convention_collective;220;
+T06925066581;True;Déménageurs professionnels;360;annuel;fixation_directe;;
+T06925066776;;;;;;;Fichier endommagé
+T06925066781;True;Tous les salariés;325;annuel;remplacement_convention_collective;160;
+T06925071124;False;;;;;;Hors thème
+T07019000255;False;;;;;;Hors thème
+T07118000399;False;;;;;;Hors thème
+T07119001242;False;;;;;;Une feuille de vote
+T07119001382;False;;;;;;Hors thème
+T07121002960;True;Tous les salariés;220;annuel;remplacement_convention_collective;130;
+T07122003235;False;;;;;;Hors thème
+T07122003636;True;Tous les salariés;350;annuel;fixation_directe;;
+T07124060262;True;Tous les salariés;400;annuel;fixation_directe;;
+T07124060271;False;;;;;;Hors thème
+T07219001459;False;;;;;;Hors thème
+T07220002307;False;;;;;;Hors thème
+T07221003910;True;Salariés durée de travail non-annualisée;220;annuel;remplacement_convention_collective;130;
+T07221003910;True;Salariés durée de travail annualisée;220;annuel;remplacement_convention_collective;110;Ni contingent ni majoration
+T07224060362;False;;;;;;Ni contingent ni majoration
+T07421004498;True;Tous les salariés;350;annuel;fixation_directe;;
+T07422006430;True;Tous les salariés;300;annuel;fixation_directe;;
+T07423006754;True;Tous les salariés;330;annuel;remplacement_convention_collective;180;
+T07423060029;True;Tous les salariés;370;annuel;fixation_directe;;
+T07424060562;True;Tous les salariés;580;annuel;fixation_directe;;
+T07425062311;False;;;;;;Majoration
+T07425062853;True;Tous les salariés;360;annuel;fixation_directe;;
+T07518000765;False;;;;;;Ni contingent ni majoration
+T07518001277;True;Tous les salariés;220;annuel;fixation_directe;;
+T07518001991;True;Tous les salariés;300;annuel;fixation_directe;;
+T07519006961;False;;;;;;Majoration
+T07519013652;False;;;;;;Majoration
+T07519014055;True;Agents de maîtrise;220;annuel;fixation_directe;;
+T07519014149;False;;;;;;Majoration
+T07519017662;True;Tous les salariés;220;annuel;fixation_directe;;
+T07519017841;False;Tous les salariés;;annuel;;;Majoration
+T07520019996;False;;;;;;Ni contingent ni majoration
+T07520021237;False;Tous les salariés;;annuel;;;Ni contingent ni majoration
+T07520023003;True;Tous les salariés;220;annuel;fixation_directe;;
+T07520024000;True;Tous les salariés;420;annuel;remplacement_convention_collective;110;
+T07520026129;True;Tous les salariés;220;annuel;fixation_directe;;
+T07520026169;True;Tous les salariés;350;annuel;fixation_directe;;
+T07520027148;True;Tous les salariés;10;annuel;fixation_directe;;
+T07521027982;False;;;;;;Majoration
+T07521036414;False;;;;;;Majoration
+T07521036735;False;;;;;;Ni contingent ni majoration
+T07522039092;False;Tous les salariés;220;annuel;;;Rappel
+T07522042606;False;;;;;;Hors thème
+T07522043519;True;Tous les salariés;310;annuel;;;
+T07523052564;True;ETAM;220;annuel;remplacement_convention_collective;130;
+T07523052564;True;Cadres;220;annuel;remplacement_contingent_legal;220;
+T07523053110;True;Tous les salariés;110;annuel;fixation_directe;;
+T07523053142;False;Tous les salariés;220;annuel;;;Rappel
+T07523057705;True;ETAM;130;annuel;fixation_directe;;Possiblement rappel convention collective
+T07523057705;False;Cadres;220;annuel;;;Rappel
+T07523060573;False;Tous les salariés;220;annuel;;;Rappel
+T07523061187;False;;;;;;Majoration
+T07524064180;True;Tous les salariés;220;annuel;fixation_directe;;
+T07524066081;False;;;;;;Majoration
+T07525073543;True;Tous les salariés;240;annuel;fixation_directe;;
+T07525082168;True;Tous les salariés;220;annuel;fixation_directe;;
+T07618000617;False;;;;;;Majoration
+T07618001125;True;Personnel compagnon d'un chantier particulier;265;annuel;fixation_directe;;Augmentation mentionnée
+T07618001212;False;;;;;;Hors thème
+T07619001512;False;;;;;;Majoration
+T07619003443;True;Tous les salariés;360;annuel;fixation_directe;;
+T07620004525;True;Tous les salariés;450;annuel;fixation_directe;;
+T07620005032;True;Ouvriers d'entreprises non adhérentes à un syndicat signataire de la convention collective (CAPEB ou FFB) ;500;annuel;remplacement_convention_collective;180;
+T07620005032;True;Ouvriers d'entreprises adhérentes à un syndicat signataire de la convention collective (CAPEB ou FFB) ;500;annuel;remplacement_convention_collective;300;
+T07620005032;True;ETAM;500;annuel;remplacement_convention_collective;180;
+T07620005207;True;Tous les salariés;510;annuel;fixation_directe;;
+T07621006890;True;Tous les salariés;400;annuel;fixation_directe;;
+T07622007079;True;Tous les salariés;220;annuel;fixation_directe;;
+T07622007576;False;;;;;;Hors thème
+T07624062501;True;Tous les salariés;800;annuel;remplacement_convention_collective;480;
+T07625063714;False;Tous les salariés;220;annuel;;;Rappel
+T07719002931;True;Tous les salariés;350;annuel;remplacement_convention_collective;130;
+T07720003564;False;;;;;;Détails non mentionnés (PV)
+T07720004715;False;;;;;;Accord peu compréhensible niveau contingent
+T07721005620;True;Personnel intervenant à domicile;220;annuel;fixation_directe;;
+T07721005620;True;Employés techniciens et cadres intégrés;220;annuel;fixation_directe;;
+T07721005732;True;Salariés et intérimaires;220;annuel;fixation_directe;;
+T07721006009;True;Tous les salariés;220;annuel;fixation_directe;;
+T07721006185;True;Tous les salariés;400;annuel;fixation_directe;;
+T07722006612;False;Tous les salariés;220;annuel;;;Rappel
+T07724060538;True;Tous les salariés;250;annuel;fixation_directe;;
+T07725063431;True;Tous les salariés;206;annuel;fixation_directe;;
+T07818001207;False;;;;;;Hors thème
+T07822011944;True;Tous les salariés;400;annuel;fixation_directe;;
+T08019000789;False;;;;;;Majoration
+T08021002708;True;Non précisé;151;annuel;fixation_directe;;
+T08024060783;;;;;;;Fichier endommagé
+T08121001750;True;Tous les salariés;520;annuel;fixation_directe;;Accord scanné
+T08122002375;True;Personnel roulant;256;annuel;fixation_directe;;
+T08323005433;True;Personnel roulant;360;annuel;;;Rappel
+T08323005433;True;Personnel sédentaire;220;annuel;;;Rappel
+T08324060495;False;Tous les salariés;;annuel;;;Hors thème
+T08324060606;True;Tous les salariés;350;annuel;remplacement_convention_collective;130;
+T08324060912;False;Tous les salariés;;annuel;;;Hors thème
+T08422003213;True;Tous les salariés;400;annuel;fixation_directe;;
+T08425062203;True;Tous les salariés;350;annuel;fixation_directe;;
+T08426062276;True;Tous les salariés;300;annuel;fixation_directe;;
+T08519002206;True;Ouvriers et ETAM;300;annuel;remplacement_convention_collective;;
+T08519002648;False;;;;;;Ni contingent ni majoration
+T08521004351;True;Tous les salariés;220;annuel;fixation_directe;;
+T08521005869;False;;;;;;Hors thème
+T08522006126;True;Tous les salariés;340;annuel;remplacement_convention_collective;;2 conventions s'appliquent différemment, donc difficile de faire un historique
+T08522007108;True;Tous les salariés;220;annuel;fixation_directe;;
+T08523007787;False;;;;;;Ni contingent ni majoration
+T08523008245;True;Tous les salariés;450;annuel;remplacement_convention_collective;;
+T08523060447;True;Tous les salariés;220;annuel;remplacement_convention_collective;;
+T08524061200;False;;;;;;Hors thème
+T08623002993;True;Tous les salariés;110;annuel;;;
+T08625061329;False;;;;;;Majoration
+T08722002815;False;;;;;;Avenant avec information manquante
+T08821002484;True;Tous les salariés;300;annuel;remplacement_convention_collective;130;
+T08925060547;True;Tous les salariés;376;annuel;remplacement_convention_collective;220;
+T09120004750;True;Salariés, intérimaires et alternants;200;annuel;fixation_directe;;
+T09125063667;True;Réceptionnaires;400;annuel;remplacement_contingent_legal;220;
+T09125063804;True;Tous les salariés;400;annuel;remplacement_convention_collective;;
+T09218004447;True;Collaborateurs;220;annuel;fixation_directe;;
+T09219006967;False;;;;;;Ni contingent ni majoration
+T09219006982;True;Ensemble du personnel;220;annuel;fixation_directe;;
+T09219007040;False;;;;;;Majoration
+T09219010031;False;;;;;;Ni contingent ni majoration
+T09220017968;False;;;;;;Hors thème
+T09223060096;True;Tous les salariés;220;annuel;fixation_directe;;
+T09224066887;True;Tous les salariés;200;annuel;remplacement_accord_anterieur;130;
+T09224069034;False;;;;;;Ni contingent ni majoration
+T09225069856;False;;;;;;Hors thème
+T09225071484;True;Tous les salariés;220;annuel;fixation_directe;;
+T09225071606;False;Tous les salariés;180;annuel;;;Rappel
+T09225075755;False;;;;;;Majoration
+T09226078217;True;Tous les salariés;264;annuel;fixation_directe;;
+T09319001708;False;;;;;;Ni contingent ni majoration
+T09319001729;False;;;;;;Majoration
+T09321006379;False;;;;;;Majoration
+T09321007271;True;Tous les salariés;330;annuel;fixation_directe;;
+T09322008609;True;Tous les salariés;220;annuel;fixation_directe;;
+T09324062934;True;Tous les salariés;220;annuel;remplacement_convention_collective;130;
+T09325063615;False;;;;;;Majoration
+T09326065249;False;Tout le personnel hors ETAM administratif;;annuel;;;Censuré
+T09419001634;False;;;;;;Ni contingent ni majoration
+T09421007015;True;Salariés durée de travail non-annualisée;300;annuel;fixation_directe;;
+T09423011591;False;;;;;;Rappel
+T09424061477;False;;;;;;Majoration
+T09522005057;;;;;;;Fichier endommagé
+T09524060770;False;Tous les salariés;;annuel;;;Censuré
+T20B22000684;False;;;;;;Hors thème
+T59L18000270;True;Tous les collaborateurs;220;annuel;fixation_directe;;
+T59L21012704;True;Tous les salariés;350;annuel;remplacement_convention_collective;145;
+T59L25068200;False;;;;;;Majoration
+T59L25068789;True;Tous les salariés;130;annuel;fixation_directe;;
+T59V23060168;True;Tous les salariés;515;annuel;fixation_directe;;Mentionne réhaussement, mais pas de valeurs avant
+T97222001866;True;Tous les salariés;400;annuel;fixation_directe;;
+T97224060213;False;;;;;;Ni contingent ni majoration
