@@ -1,8 +1,12 @@
-Analyse les extraits de l'accord d'entreprise ci-dessous et extrait les informations relatives au contingent d'heures supplémentaires selon le schéma JSON demandé.
+Analyse les extraits de l'accord ou du texte ci-dessous et extrais exclusivement les règles, taux et paliers de majoration des heures supplémentaires selon le schéma JSON demandé.
 
-### Extraits du document :
+### EXTRAITS DU DOCUMENT :
 ---
 {context}
 ---
 
-Si le texte ne mentionne aucun taux ou règle explicite pour les heures supplémentaires, renvoie `presence_regle_conventionnelle = False` et `regles_majorations = []`.
+### RAPPEL DES CONSIGNES CLÉS :
+1. Extrais uniquement ce qui est présent en toutes lettres. Ne devine et ne calcule aucun taux ou palier absent du texte.
+2. Distingue rigoureusement les rangs d'heures (numéro de l'heure) et les volumes d'heures (quantité d'heures supplémentaires cumulées).
+3. Ne confonds pas les heures supplémentaires avec les heures complémentaires, les majorations de nuit/dimanche/fériés, ou les bonifications de repos compensateur.
+4. Si le document ne contient aucun taux ou règle explicite sur les heures supplémentaires, renvoie `presence_regle_conventionnelle = False` et `regles_majorations = []`.
