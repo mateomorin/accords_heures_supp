@@ -16,8 +16,8 @@ La majoration d'heures supplémentaires correspond au taux de majoration de sala
 
 2. **Règle d'entreprise vs Rappel légal :**
    - Si le document fixe des taux ou règles spécifiques applicables dans l'entreprise, renseigne-les et positionne `rappel_majoration` à `False` pour les paliers concernés.
-   - Si le document se contente d'un rappel global sans disposition spécifique (ex. "les heures supplémentaires sont majorées selon les dispositions légales"), positionne `presence_regle_conventionnelle` à `False` et qualifie les paliers concernés par `rappel_majoration = True`.
-   - Si le document se rapport à un texte légal (Code du travail, accord antérieur, convention collective, ...) pour indiquer les majorations, positionne `presence_regle_conventionnelle` à `False` et qualifie les paliers concernés par `rappel_majoration = True`.
+   - Si le document se contente d'un rappel global sans disposition spécifique (ex. "les heures supplémentaires sont majorées selon les dispositions légales"), positionne `presence_regle_conventionnelle` à `False` et `rappel_majoration` à `True`.
+   - Si le document se rapporte à un texte légal (Code du travail, accord antérieur, convention collective, ...) pour indiquer les majorations, positionne `presence_regle_conventionnelle` à `False` et `rappel_majoration` à `True`.
 
 3. **Absence, silence ou doute :**
    - Si le texte ne mentionne aucun taux ou règle explicite pour les heures supplémentaires, renvoie `presence_regle_conventionnelle = False` et `regles_majorations = []`.

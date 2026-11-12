@@ -1,14 +1,17 @@
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 
 import hydra
+import mlflow
 import pandas as pd
+from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables.base import Runnable
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
-from langfuse.langchain import CallbackHandler
+from mlflow.langchain.langchain_tracer import MlflowLangchainTracer
 from omegaconf import DictConfig
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
@@ -21,7 +24,10 @@ from services import ServiceContainer
 
 
 SCRIPT_DIR = Path(__file__).parent
-langfuse_handler = CallbackHandler()
+
+load_dotenv(override=True)
+mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+mlflow_handler = MlflowLangchainTracer()
 
 # --------------------------------------------------------------------------- #
 # Logging
@@ -193,17 +199,16 @@ async def extract_one(
                 return row
 
             context_text = "\n\n".join(chunk.page_content for chunk in retrieved_chunks)
+
             res = await chain.ainvoke(
                 {"context": context_text},
                 config={
-                    "callbacks": [langfuse_handler],
+                    "callbacks": [mlflow_handler],
                     "run_name": f"extraction-{ref_value}",
-                    "tags": [f"year-{year}"],
                     "metadata": {
                         "reference": ref_value,
                         "n_chunks": len(retrieved_chunks),
-                        "langfuse_user_id": ref_value,
-                        "langfuse_session_id": f"year-{year}"
+                        "year": year
                     }
                 }
             )
@@ -405,6 +410,7 @@ async def main_async(cfg: DictConfig) -> int:
     queries = create_queries(query_file=cfg.prompts.query_file)
 
     # Exctract data for the desired year
+    mlflow.set_experiment(f"extraction-{cfg.args.type}-{cfg.args.year}")
     total_errors = await process_year(
         cfg=cfg,
         services=services,

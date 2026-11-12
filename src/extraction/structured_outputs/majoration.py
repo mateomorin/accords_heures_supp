@@ -56,11 +56,6 @@ class PalierMajoration(BaseModel):
         default=None,
         description="Condition spécifique au palier (ex: 'Uniquement pour le travail du dimanche', 'De nuit', 'Si dépassement du contingent').",
     )
-    rappel_majoration: bool = Field(
-        default=False,
-        description="True si la majoration présentée est un rappel d'un autre texte légal (Code du Travail, accords d'entreprise, conventions collectives, ...) "
-                    "ou si un extrait mentionne explicitement un rappel pour la majoration"
-    )
 
 
 class RegleMajoration(BaseModel):
@@ -97,4 +92,9 @@ class ExtractionMajorations(BaseModel):
     justification_ou_reserve: str | None = Field(
         default=None,
         description="Remarques explicatives (ex: renvoi à la convention collective nationale, dispositions temporaires).",
+    )
+    rappel_majoration: bool = Field(
+        default=False,
+        description="True si la majoration présentée est un rappel d'un autre texte légal (Code du Travail, accords d'entreprise, conventions collectives, ...) "
+                    "ou si un extrait mentionne explicitement un rappel pour la majoration."
     )
