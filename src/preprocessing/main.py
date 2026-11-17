@@ -10,7 +10,7 @@ from pathlib import Path
 
 import config
 import pandas as pd
-from structure import parts_to_rows
+from structure import doc_to_row
 from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -39,7 +39,7 @@ def process_shard(
             "doc_type": row.get("doc_type"),
             "format": row.get("format"),
         }
-        all_rows.extend(parts_to_rows(doc, metadata=metadata))
+        all_rows.append(doc_to_row(doc, metadata=metadata))
 
     out_df = pd.DataFrame(all_rows)
     if dry_run:

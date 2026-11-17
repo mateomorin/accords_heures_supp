@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from repair import process_document
@@ -37,10 +38,32 @@ def attach_tables(parts: list[dict[str, Any]], doc: dict[str, Any]) -> list[dict
     return parts
 
 
-def parts_to_rows(doc: dict[str, Any], metadata: dict[str, Any]) -> list[dict[str, Any]]:
-    """Convert one document into output rows (one row per part)."""
-    parts = process_document(doc)
-    parts = attach_tables(parts, doc)
+def part_to_dict(part: dict[str, Any]) -> dict[str, Any]:
+    """Public JSON representation of one part."""
+    body_md = part.get("body_md") or ""
+    tables = part.get("tables") or []
+    return {
+        "section_id": part["section_id"],
+        "original_section_id": part["original_section_id"],
+        "section_order": part["section_order"],
+        "level": part["level"],
+        "number": format_number(part["number"]),
+        "title": part["title"],
+        "parent_id": part["parent"]["section_id"] if part.get("parent") else None,
+        "path": part["path"],
+        "body_md": body_md,
+        "n_chars": len(body_md),
+        "table_ids": part.get("table_ids") or [],
+        "tables": tables,
+        "n_tables": len(tables),
+        "origin": part["origin"],
+        "merged_ids": part.get("merged_ids") or [],
+    }
+
+
+def doc_to_row(doc: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
+    """Convert one document into one output row (parts packed in a JSON column)."""
+    parts = attach_tables(process_document(doc), doc)
 
     date_signature = metadata.get("dateSignature")
     try:
@@ -48,39 +71,16 @@ def parts_to_rows(doc: dict[str, Any], metadata: dict[str, Any]) -> list[dict[st
     except ValueError:
         year = None
 
-    doc_n_sections = len(doc.get("sections") or [])
-    doc_n_tables = len(doc.get("tables") or [])
-
-    rows = []
-    for part in parts:
-        body_md = part.get("body_md") or ""
-        tables = part.get("tables") or []
-        rows.append(
-            {
-                "cid": metadata.get("cid"),
-                "reference": metadata.get("reference"),
-                "dateSignature": date_signature,
-                "anneeSignature": year,
-                "doc_type": metadata.get("doc_type"),
-                "format": metadata.get("format"),
-                "section_id": part["section_id"],
-                "original_section_id": part["original_section_id"],
-                "section_order": part["section_order"],
-                "level": part["level"],
-                "number": format_number(part["number"]),
-                "title": part["title"],
-                "parent_id": part["parent"]["section_id"] if part.get("parent") else None,
-                "path": part["path"],
-                "body_md": body_md,
-                "n_chars": len(body_md),
-                "table_ids": part.get("table_ids") or [],
-                "tables": tables,
-                "n_tables": len(tables),
-                "origin": part["origin"],
-                "merged_ids": part.get("merged_ids") or [],
-                "doc_n_sections": doc_n_sections,
-                "doc_n_tables": doc_n_tables,
-            }
-        )
-
-    return rows
+    parts_json = [part_to_dict(part) for part in parts]
+    return {
+        "cid": metadata.get("cid"),
+        "reference": metadata.get("reference"),
+        "dateSignature": date_signature,
+        "anneeSignature": year,
+        "doc_type": metadata.get("doc_type"),
+        "format": metadata.get("format"),
+        "doc_n_sections": len(doc.get("sections") or []),
+        "doc_n_tables": len(doc.get("tables") or []),
+        "n_parts": len(parts_json),
+        "parts_json": json.dumps(parts_json, ensure_ascii=False),
+    }

@@ -22,16 +22,24 @@ By default the pipeline writes:
 s3://mateomorin/legifrance/rag/v2/shards/shard_XXXXX.parquet
 ```
 
-One output row corresponds to one document part:
+One output row corresponds to one document. The `parts_json` column holds the
+document's parts as a JSON list, in document order:
 
 - doc-level preamble (from `preamble_md`)
 - content sections
 - sections recovered from embedded headings (body splits)
 - doc-level signature (from `signature_md`, including signature tables)
 
-Main columns:
+Row columns:
 
-- `reference`
+- `cid` / `reference` / `dateSignature` / `anneeSignature`
+- `doc_type` / `format`
+- `doc_n_sections` / `doc_n_tables`
+- `n_parts`
+- `parts_json` (JSON list of parts)
+
+Each part in `parts_json` has:
+
 - `section_id` / `original_section_id`
 - `section_order`
 - `level` (depth in the rebuilt tree)

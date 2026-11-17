@@ -1,7 +1,9 @@
 """Golden-document tests for the deterministic structure repair."""
 
+import json
+
 from repair import process_document
-from structure import parts_to_rows
+from structure import doc_to_row
 
 
 def _section(sid, title, body=None, number=None, **kw):
@@ -225,7 +227,7 @@ def test_page_fragment_dropped() -> None:
     assert [p["section_id"] for p in parts] == ["S2"]
 
 
-def test_parts_to_rows_schema() -> None:
+def test_doc_to_row_schema() -> None:
     doc = _doc(
         [
             _section("S1", "ARTICLE V. HEURES SUPPLEMENTAIRES"),
@@ -243,17 +245,19 @@ def test_parts_to_rows_schema() -> None:
         "format": "docx",
     }
 
-    rows = parts_to_rows(doc, metadata=metadata)
+    row = doc_to_row(doc, metadata=metadata)
+    parts = json.loads(row["parts_json"])
 
-    assert [row["section_id"] for row in rows] == ["S1", "S2", "SIGNATURE"]
-    assert [row["section_order"] for row in rows] == [0, 1, 2]
-    assert [row["number"] for row in rows] == ["5", "5.1", None]
-    assert rows[1]["parent_id"] == "S1"
-    assert rows[1]["path"] == "ARTICLE V. HEURES SUPPLEMENTAIRES > 5.1 Contingent annuel"
-    assert rows[1]["origin"] == "original"
-    assert rows[2]["origin"] == "signature"
-    assert rows[0]["anneeSignature"] == 2017
-    assert rows[0]["doc_n_sections"] == 2
-    for row in rows:
-        assert row["merged_ids"] == []
-        assert row["n_chars"] == len(row["body_md"])
+    assert [p["section_id"] for p in parts] == ["S1", "S2", "SIGNATURE"]
+    assert [p["section_order"] for p in parts] == [0, 1, 2]
+    assert [p["number"] for p in parts] == ["5", "5.1", None]
+    assert parts[1]["parent_id"] == "S1"
+    assert parts[1]["path"] == "ARTICLE V. HEURES SUPPLEMENTAIRES > 5.1 Contingent annuel"
+    assert parts[1]["origin"] == "original"
+    assert parts[2]["origin"] == "signature"
+    assert row["anneeSignature"] == 2017
+    assert row["doc_n_sections"] == 2
+    assert row["n_parts"] == 3
+    for part in parts:
+        assert part["merged_ids"] == []
+        assert part["n_chars"] == len(part["body_md"])
