@@ -1,0 +1,6 @@
+# Retrieval profile: contingent evolution (legacy chunk similarity).
+#
+# Same retrieval as `contingent`; only the prompt set and the structured output differ.
+
+mode: similarity
+collection: "accords_heures_supp"

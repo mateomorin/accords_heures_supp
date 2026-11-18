@@ -1,0 +1,9 @@
+### ARBORESCENCE DU DOCUMENT :
+---
+{outline}
+---
+
+### RAPPEL :
+1. Sélectionne toutes les sections utiles à l'extraction des majorations d'heures supplémentaires, y compris le ou les champs d'application.
+2. En cas de doute sur une section, sélectionne-la.
+3. N'utilise que les identifiants entre crochets de l'arborescence ci-dessus.

@@ -1,1 +1,3 @@
-Query: majoration heures supplémentaires
+majoration des heures supplémentaires : taux et paliers
+décompte, seuil de déclenchement et contingent des heures supplémentaires
+champ d'application de l'accord et salariés concernés

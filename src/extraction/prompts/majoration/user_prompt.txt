@@ -1,12 +1,15 @@
-Analyse les extraits de l'accord ou du texte ci-dessous et extrais exclusivement les règles, taux et paliers de majoration des heures supplémentaires selon le schéma JSON demandé.
+Analyse les sections de l'accord ci-dessous et extrais exclusivement les mentions de majoration des heures supplémentaires selon le schéma JSON demandé.
 
-### EXTRAITS DU DOCUMENT :
+### SECTIONS DU DOCUMENT (ordre du document) :
 ---
 {context}
 ---
 
 ### RAPPEL DES CONSIGNES CLÉS :
 1. Extrais uniquement ce qui est présent en toutes lettres. Ne devine et ne calcule aucun taux ou palier absent du texte.
-2. Distingue rigoureusement les rangs d'heures (numéro de l'heure) et les volumes d'heures (quantité d'heures supplémentaires cumulées).
-3. Ne confonds pas les heures supplémentaires avec les heures complémentaires, les majorations de nuit/dimanche/fériés, ou les bonifications de repos compensateur.
-4. Si le document ne contient aucun taux ou règle explicite sur les heures supplémentaires, renvoie `presence_regle_conventionnelle = False` et `regles_majorations = []`.
+2. Chaque mention porte une `nature` : `regle_conventionnelle`, `rappel` ou `indeterminee`. Un rappel sans taux chiffré est une mention valide.
+3. Distingue rigoureusement les rangs d'heures (numéro de l'heure) et les volumes d'heures (quantité d'heures supplémentaires cumulées).
+4. Ne confonds pas les heures supplémentaires avec les heures complémentaires, les majorations de nuit/dimanche/fériés, ou les bonifications de repos compensateur.
+5. Renseigne `section_ids` avec les identifiants entre crochets des sections utilisées (ex: `["S12"]`), et `citation_exacte` avec un extrait mot à mot.
+6. Les règles s'appliquent dans le périmètre des blocs marqués `⇐ CHAMP D'APPLICATION`, sauf restriction explicite écrite dans la section de la règle.
+7. Si le document ne contient aucune mention de majoration, renvoie `mentions = []`.

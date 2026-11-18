@@ -1,0 +1,33 @@
+# Retrieval profile: overtime majoration (structured mode).
+#
+# Full reading when the whole document fits in `max_document_chars`, hybrid retrieval
+# (anchors + outline selector + similarity) otherwise. The hybrid context is bounded by
+# `max_context_chars` so that it never exceeds a full reading.
+
+mode: structured
+collection: "accords_heures_supp_parts"
+parts_path: "s3://mateomorin/legifrance/rag/v2/shards"
+
+# Thresholds (characters of rendered context)
+max_document_chars: 30000
+max_context_chars: 30000
+max_outline_chars: 12000
+
+# Sections that are always included, whatever the selector says. Matched literally
+# (case/accent/apostrophe insensitive) against part titles; several matches are kept.
+anchor_titles:
+  - "champ d'application"
+anchor_tag: "CHAMP D'APPLICATION"
+# Used when no application-scope section exists and the preamble is used as fallback
+preamble_tag: "PREAMBULE — CHAMP D'APPLICATION NON EXPLICITE"
+
+# Similarity search over the part chunks
+similarity_top_k: 5
+max_similarity_parts: 12
+
+# Sibling completion around the selector picks
+max_siblings: 12
+
+# Outline selector prompts
+selector_system_prompt_file: "prompts/majoration/selector_system_prompt.txt"
+selector_user_prompt_file: "prompts/majoration/selector_user_prompt.txt"

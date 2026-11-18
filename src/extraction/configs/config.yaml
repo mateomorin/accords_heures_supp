@@ -4,7 +4,7 @@ defaults:
 args:
   type: contingent        # Information to extract (name of a subfolder in the project)
   year: 2023              # Signature year to treat
-  top_k: 5                # Number of chunks per document
+  top_k: 5                # Number of chunks per document (similarity mode)
   concurrency: 5          # Max number of (retrieval + LLM) per process
   shard_size: 200         # Number of references per shard to save on S3
   skip_existing: True     # Ignore years where parquet file already exists
@@ -21,6 +21,9 @@ vector_storage:
   year_key: "metadata.anneeSignature"
   ref_key: "metadata.reference"
   timeout: 60
+
+# One retrieval profile per extraction type: configs/retrieval/<type>.yaml
+retrieval_dir: "configs/retrieval"
 
 prompts:
   prompt_dir: "prompts/${args.type}"
