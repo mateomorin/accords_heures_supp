@@ -16,8 +16,10 @@ column holding the document parts (see `src/preprocessing/README.md`). Required 
 
 Each part is embedded **as a whole** unless it exceeds `CHUNK_SIZE` (2000 chars); long
 parts are split with a 200-char overlap. Every chunk is prefixed with the part breadcrumb
-(`path` > `title`) so that a chunk taken mid-part is still self-locating. Tables attached
-to a part are part of the embedded text: majoration grids and paliers live there.
+(ancestors `>` title) so that a chunk taken mid-part is still self-locating. Since `path`
+already ends with the title and `body_md` starts with the heading line, both are dropped:
+each chunk states its title exactly once. Tables attached to a part are part of the
+embedded text: majoration grids and paliers live there.
 
 Container parts (empty body and no table) produce no point; they still exist in
 `parts_json` for the outline selector.

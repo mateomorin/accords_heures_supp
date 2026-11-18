@@ -19,6 +19,8 @@ import json
 import logging
 import os
 import random
+import re
+import unicodedata
 import uuid
 from typing import Any
 
@@ -90,18 +92,70 @@ def list_shards(path: str) -> list[str]:
     return sorted(f for f in config.fs.ls(path) if f.endswith(".parquet"))
 
 
+def fold(text: str) -> str:
+    """Case, accent, dash, apostrophe and whitespace insensitive form of a heading."""
+    text = text or ""
+    for dash in ("\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2015"):
+        text = text.replace(dash, "-")
+    text = text.replace("\u2019", "'").replace("\u2018", "'").replace("\u02bc", "'")
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def breadcrumbs(part: dict[str, Any]) -> list[str]:
+    """
+    Ancestors of the part, without the part itself and without duplicates.
+
+    `path` is a `" > "` breadcrumb that already ends with the part title, and the
+    preprocessing also keeps the heading line at the top of `body_md`: left as is, the
+    title would appear three times in every chunk.
+    """
+    title = fold(part.get("title"))
+    crumbs: list[str] = []
+    for crumb in (part.get("path") or "").split(">"):
+        crumb = crumb.strip()
+        if not crumb or (crumbs and fold(crumb) == fold(crumbs[-1])):
+            continue
+        crumbs.append(crumb)
+    while crumbs and title and fold(crumbs[-1]) == title:
+        crumbs.pop()
+    return crumbs
+
+
+def strip_heading(text: str, headings: set[str]) -> str:
+    """Drop leading heading lines that repeat the title (and the blank lines around them)."""
+    lines = text.split("\n")
+    index = 0
+    removed = False
+    while index < len(lines):
+        line = lines[index]
+        if not line.strip():
+            index += 1
+            continue
+        if fold(line) in headings:
+            index += 1
+            removed = True
+            continue
+        break
+    return "\n".join(lines[index:]) if removed else text
+
+
 def part_body(part: dict[str, Any]) -> str:
-    """Body markdown followed by the markdown of its tables."""
-    blocks = [part.get("body_md") or ""]
+    """Body markdown without its duplicated heading, followed by the markdown of its tables."""
+    headings = {
+        fold(heading)
+        for heading in (part.get("title"), (part.get("path") or "").split(">")[-1])
+        if heading and heading.strip()
+    }
+    blocks = [strip_heading(part.get("body_md") or "", headings)]
     blocks += [table.get("md") or "" for table in part.get("tables") or []]
     return "\n\n".join(block.strip() for block in blocks if block and block.strip())
 
 
 def part_header(part: dict[str, Any]) -> str:
-    """Breadcrumb + title, repeated on every chunk of the part."""
-    path = part.get("path") or ""
-    title = part.get("title") or ""
-    return "\n".join(part for part in (path, title) if part)
+    """Breadcrumb of the ancestors + the title, once, on every chunk of the part."""
+    title = (part.get("title") or "").strip()
+    return " > ".join([*breadcrumbs(part), title] if title else breadcrumbs(part))
 
 
 def part_metadata(row: dict[str, Any], part: dict[str, Any], shard: str) -> dict[str, Any]:

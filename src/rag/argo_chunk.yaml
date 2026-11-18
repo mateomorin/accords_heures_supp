@@ -45,7 +45,7 @@ spec:
         source: |
           set -euo pipefail
 
-          git clone --depth 1 -b main https://github.com/mateomorin/accords_heures_supp.git
+          git clone --depth 1 -b feature/structured_rag https://github.com/mateomorin/accords_heures_supp.git
           cd accords_heures_supp
 
           echo "Chunking + embeddings of the v2 parts into {{inputs.parameters.collection}}..."
