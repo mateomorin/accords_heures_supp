@@ -93,11 +93,6 @@ class MentionMajoration(BaseModel):
     citation_exacte: str = Field(
         description="Extrait exact du texte source (copié mot à mot) qui justifie la mention."
     )
-    commentaire: str | None = Field(
-        default=None,
-        description="Précision utile : ambiguïté du texte, renvoi à un autre texte, réserve "
-                    "d'interprétation. Laisser null si la mention est claire.",
-    )
 
 
 class ExtractionMajorations(BaseModel):

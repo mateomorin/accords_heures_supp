@@ -76,6 +76,8 @@ Outputs, all git-ignored except the report, the findings and the scripts:
 
 ## Reading the results
 
+All the results are in s3 in the folder `s3://mateomorin/legifrance/benchmark_rag_ceiling/`
+
 - `full` is the reference, not truth: a divergence means two contexts led to different
   extractions, not that `full` is right.
 - Read yield with agreement: `identical` mixes content loss with wording, which is why

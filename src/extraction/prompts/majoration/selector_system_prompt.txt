@@ -14,4 +14,4 @@ Sélectionne les identifiants des sections susceptibles de contenir, de définir
 6. **Exclus** le préambule et la signature, sauf s'ils énoncent eux-mêmes un taux ou un champ d'application.
 7. Ne sélectionne que des identifiants présents entre crochets dans l'arborescence. N'invente jamais d'identifiant.
 
-Réponds uniquement via le schéma demandé : la liste `section_ids` et, si utile, un `commentaire` court.
+Réponds uniquement via le schéma demandé : la liste `section_ids`.

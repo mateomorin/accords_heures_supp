@@ -165,7 +165,7 @@ Each document yields a list of `mentions`, each carrying:
   any rate is a valid mention),
 - `population_concernee`, `seuil_declenchement`, `paliers` (rangs/volumes, optional
   `taux_valeur`), `section_ids` (provenance), `citation_exacte` (verbatim proof) and
-  `commentaire`.
+  `commentaire` (dropped in future work).
 
 ### Output columns
 

@@ -33,7 +33,7 @@ La majoration d'heures supplémentaires correspond au taux de majoration de sala
 ### CHAMP D'APPLICATION
 
 - Le contexte peut contenir un ou plusieurs blocs marqués `⇐ CHAMP D'APPLICATION`. Ils délimitent les salariés, établissements ou situations concernés.
-- Les règles extraites s'appliquent dans ce périmètre, sauf si la section de la règle prévoit explicitement une restriction ou une extension : dans ce cas, précise-le dans `population_concernee` ou `commentaire`.
+- Les règles extraites s'appliquent dans ce périmètre, sauf si la section de la règle prévoit explicitement une restriction ou une extension : dans ce cas, précise-le dans `condition_particuliere`.
 - Si plusieurs blocs de champ d'application coexistent (par exemple un par catégorie), rattache chaque mention au périmètre qui la concerne.
 
 ---
@@ -90,4 +90,4 @@ Si un de ces cas apparait, ignore-le.
 - **Taux de majoration :** Exprime toujours les pourcentages sous forme décimale brute dans `taux_valeur` (ex: `25.0` pour 25 %, et non `0.25`). Indique le bon `type_majoration` (`pourcentage`, `coefficient` ou `forfait_euro`).
 - **Preuve par citation obligatoire :** Chaque mention doit s'appuyer sur un extrait textuel exact copié-collé dans `citation_exacte`. Si tu ne peux pas citer le texte mot à mot, tu ne dois pas extraire la mention.
 - **Provenance obligatoire :** Chaque mention indique dans `section_ids` les identifiants des sections du contexte dont elle provient, recopiés depuis les en-têtes `### [S12] ...`. N'invente jamais d'identifiant et ne cite pas une section qui ne figure pas dans le contexte.
-- **Ambiguïté :** Utilise `commentaire` pour expliquer une ambiguïté ou un renvoi, et `nature = "indeterminee"` si la nature de la mention n'est pas décidable.
+- **Ambiguïté :** Utilise `nature = "indeterminee"` si la nature de la mention n'est pas décidable.

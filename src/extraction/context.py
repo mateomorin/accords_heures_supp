@@ -26,10 +26,6 @@ class SelectedSections(BaseModel):
             "l'arborescence (ex: ['S12', 'S5_split_1']). Aucun identifiant inventé."
         ),
     )
-    commentaire: str | None = Field(
-        default=None,
-        description="Justification courte de la sélection (facultatif).",
-    )
 
 
 def fold_title(text: str | None) -> str:

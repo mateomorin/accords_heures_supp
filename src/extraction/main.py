@@ -200,7 +200,17 @@ async def structured_context(
         raise ValueError("The 'structured' retrieval mode requires a selector prompt.")
 
     outline = build_outline(parts, retrieval.max_outline_chars)
-    selection = await selector_chain.ainvoke({"outline": outline})
+    selection = await selector_chain.ainvoke(
+        {"outline": outline},
+        config={
+            "callbacks": [mlflow_handler],
+            "run_name": f"extraction-{ref_value}",
+            "metadata": {
+                "reference": ref_value,
+                "year": retrieval.year
+            }
+        }
+    )
     known = {part["section_id"] for part in parts}
     selected_ids = [sid for sid in (selection.section_ids if selection else []) if sid in known]
 
