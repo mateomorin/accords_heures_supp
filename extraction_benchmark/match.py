@@ -1,15 +1,22 @@
 """
 Order-insensitive comparison of the mentions produced by the four arms.
 
-The LLM may return the same rules in a different order, split or merge mentions, or
-attach the same rate to a different population. This module canonicalises a mention and
-aligns two lists of mentions in two tiers:
+The LLM may return the same rules in a different order, split or merge mentions, attach
+the same rate to a different population, or describe the same rule with another nature.
+A single "exact match" rate therefore mixes three very different things: real content
+loss, differences in palier boundaries, and pure labelling noise. Mentions are aligned
+in three tiers, from the most specific to the loosest:
 
-  1. exact   : same nature, same threshold, same population, same set of paliers;
-  2. partial : same nature/threshold/population but a different set of paliers.
+  1. `exact`     : same nature, threshold, population and palier set;
+  2. `same_rule` : same palier set, but another nature / threshold / population wording
+                   (the rule is identical, only its labels differ);
+  3. `bounds`    : same nature / threshold / population, but a different palier set
+                   (boundaries split, merged or shifted).
 
-What cannot be aligned is left unmatched and written to `manual_review_<cap>.md` (one
-section per ambiguous document, every arm side by side) so it can be adjudicated by hand.
+What cannot be aligned is left as `arm_only` (an extra rule, possibly a hallucination)
+or `full_only` (a rule the arm missed). Those two are the only tiers that represent a
+real content divergence, and they are written to `manual_review_<cap>.md` for
+adjudication by hand.
 
 Usage:
     uv run extraction_benchmark/match.py --caps 20000,30000,40000
@@ -46,137 +53,182 @@ def number(value) -> float | None:
 
 
 def palier_key(palier: dict) -> tuple:
-    """Order-insensitive identity of one palier."""
-    return (
-        palier.get("type_majoration"),
-        number(palier.get("taux_valeur")),
-        number(palier.get("rang_debut")),
-        number(palier.get("rang_fin")),
-        number(palier.get("volume_heures_debut")),
-        number(palier.get("volume_heures_fin")),
+    """
+    Order-insensitive identity of one palier.
+
+    Values are stringified so the tuple is totally ordered: `type_majoration` is
+    `None` on a reminder without a rate, and sorting `None` against `"pourcentage"`
+    raises `TypeError`.
+    """
+    return tuple(
+        str(value)
+        for value in (
+            palier.get("type_majoration"),
+            number(palier.get("taux_valeur")),
+            number(palier.get("rang_debut")),
+            number(palier.get("rang_fin")),
+            number(palier.get("volume_heures_debut")),
+            number(palier.get("volume_heures_fin")),
+        )
     )
 
 
+def palier_set(mention: dict) -> tuple:
+    """Identity of the paliers of a mention, ignoring everything else."""
+    return tuple(sorted(palier_key(palier) for palier in mention["paliers"]))
+
+
 def mention_key(mention: dict) -> tuple:
-    """Identity of a mention without its paliers."""
+    """Identity of a mention without its paliers (labels only)."""
     return (
         mention.get("nature"),
-        number(mention.get("seuil_declenchement")),
+        str(number(mention.get("seuil_declenchement"))),
         normalize(mention.get("population_concernee")),
     )
 
 
 def mention_signature(mention: dict) -> tuple:
     """Full, order-insensitive identity of a mention."""
-    return mention_key(mention) + (tuple(sorted(palier_key(p) for p in mention["paliers"])),)
+    return mention_key(mention) + (palier_set(mention),)
+
+
+def _align(left: list[dict], right: list[dict], left_indexes, right_indexes, key):
+    """Pair left and right mentions that share the same `key`, first come first served."""
+    buckets: dict[tuple, list[int]] = defaultdict(list)
+    for index in right_indexes:
+        buckets[key(right[index])].append(index)
+
+    pairs = []
+    leftovers = []
+    for index in left_indexes:
+        bucket = buckets.get(key(left[index]))
+        if bucket:
+            pairs.append((index, bucket.pop(0)))
+        else:
+            leftovers.append(index)
+    return pairs, leftovers
 
 
 def match_mentions(left: list[dict], right: list[dict]) -> dict:
-    """Align two mention lists: exact pairs, then partial pairs, then leftovers."""
-    available: dict[tuple, list[int]] = defaultdict(list)
-    for index, mention in enumerate(right):
-        available[mention_signature(mention)].append(index)
+    """Align two mention lists through the three tiers, then report the leftovers."""
+    exact, remaining_left = _align(
+        left, right, range(len(left)), list(range(len(right))), mention_signature
+    )
+    matched_right = {j for _, j in exact}
+    remaining_right = [j for j in range(len(right)) if j not in matched_right]
 
-    exact: list[tuple[int, int]] = []
-    remaining_left = []
-    for index, mention in enumerate(left):
-        bucket = available.get(mention_signature(mention))
-        if bucket:
-            exact.append((index, bucket.pop(0)))
-        else:
-            remaining_left.append(index)
+    same_rule, remaining_left = _align(
+        left, right, remaining_left, remaining_right, palier_set
+    )
+    matched_right |= {j for _, j in same_rule}
+    remaining_right = [j for j in range(len(right)) if j not in matched_right]
 
-    used_right = {index for _, index in exact}
-    remaining_right = [index for index in range(len(right)) if index not in used_right]
-
-    by_key: dict[tuple, list[int]] = defaultdict(list)
-    for index in remaining_right:
-        by_key[mention_key(right[index])].append(index)
-
-    partial: list[tuple[int, int]] = []
-    unmatched_left = []
-    for left_index in remaining_left:
-        bucket = by_key.get(mention_key(left[left_index]))
-        if bucket:
-            partial.append((left_index, bucket.pop(0)))
-        else:
-            unmatched_left.append(left_index)
-
-    matched_right = used_right | {index for _, index in partial}
-    unmatched_right = [index for index in range(len(right)) if index not in matched_right]
+    bounds, remaining_left = _align(
+        left, right, remaining_left, remaining_right, mention_key
+    )
+    matched_right |= {j for _, j in bounds}
 
     return {
         "exact": exact,
-        "partial": partial,
-        "unmatched_left": unmatched_left,
-        "unmatched_right": unmatched_right,
+        "same_rule": same_rule,
+        "bounds": bounds,
+        "arm_only": remaining_left,
+        "full_only": [j for j in range(len(right)) if j not in matched_right],
     }
 
 
 def parse_mentions(raw: str | None) -> list[dict]:
-    return json.loads(raw) if raw else []
+    """Mentions stored as JSON in one result row."""
+    return json.loads(raw) if isinstance(raw, str) and raw else []
 
 
-def agreement_stats(results: pd.DataFrame, arm: str, baseline: str = "full") -> dict:
-    """Aggregate alignment statistics of `arm` against `baseline`, per document."""
+def compare_documents(results: pd.DataFrame, arm: str, baseline: str = "full") -> dict:
+    """Per-arm alignment counts against the baseline, over the documents both cover."""
     left = results[results["arm"] == arm].set_index("reference")
     right = results[results["arm"] == baseline].set_index("reference")
     common = left.index.intersection(right.index)
 
-    n_left = n_right = n_exact = n_partial = 0
-    identical = 0
+    counts = dict.fromkeys(("exact", "same_rule", "bounds", "arm_only", "full_only"), 0)
+    identical_docs = 0
+    docs = 0
+    per_document = {}
     for reference in common:
-        left_mentions = parse_mentions(left.loc[reference, "mentions_json"])
-        right_mentions = parse_mentions(right.loc[reference, "mentions_json"])
-        outcome = match_mentions(left_mentions, right_mentions)
-        n_left += len(left_mentions)
-        n_right += len(right_mentions)
-        n_exact += len(outcome["exact"])
-        n_partial += len(outcome["partial"])
-        identical += int(len(outcome["exact"]) == len(left_mentions) == len(right_mentions))
+        arm_mentions = parse_mentions(left.loc[reference, "mentions_json"])
+        base_mentions = parse_mentions(right.loc[reference, "mentions_json"])
+        outcome = match_mentions(arm_mentions, base_mentions)
+        docs += 1
+        for tier in counts:
+            counts[tier] += len(outcome[tier])
+        identical_docs += int(len(outcome["exact"]) == len(arm_mentions) == len(base_mentions))
+        per_document[reference] = {
+            "n_arm": len(arm_mentions),
+            "n_full": len(base_mentions),
+            "content_divergence": len(outcome["bounds"])
+            + len(outcome["arm_only"])
+            + len(outcome["full_only"]),
+        }
 
-    matched = n_exact + n_partial
+    n_arm = sum(item["n_arm"] for item in per_document.values())
+    n_full = sum(item["n_full"] for item in per_document.values())
+    aligned = counts["exact"] + counts["same_rule"] + counts["bounds"]
     return {
-        "documents": len(common),
-        "mentions (arm)": n_left,
-        "mentions (full)": n_right,
-        "exact match (%)": 100 * n_exact / n_left if n_left else float("nan"),
-        "exact+partial match (%)": 100 * matched / n_left if n_left else float("nan"),
-        "full mentions covered (%)": 100 * matched / n_right if n_right else float("nan"),
-        "identical documents (%)": 100 * identical / len(common) if len(common) else float("nan"),
+        "documents": docs,
+        **counts,
+        "mentions (arm)": n_arm,
+        "mentions (full)": n_full,
+        "identical (%)": 100 * counts["exact"] / n_arm if n_arm else float("nan"),
+        "same rule, other labels (%)": 100 * counts["same_rule"] / n_arm if n_arm else float("nan"),
+        "different bounds (%)": 100 * counts["bounds"] / n_arm if n_arm else float("nan"),
+        "extra rule (%)": 100 * counts["arm_only"] / n_arm if n_arm else float("nan"),
+        "full covered (%)": 100 * aligned / n_full if n_full else float("nan"),
+        "documents fully identical (%)": 100 * identical_docs / docs if docs else float("nan"),
+        "documents with a content divergence": sum(
+            item["content_divergence"] > 0 for item in per_document.values()
+        ),
+        "_per_document": per_document,
     }
 
 
-def disagreement_rows(results: pd.DataFrame, cap: int) -> list[dict]:
-    """Every mention that could not be aligned with the `full` arm, for manual review."""
+def agreement_stats(results: pd.DataFrame, arm: str, baseline: str = "full") -> dict:
+    """Public view of `compare_documents`, without the per-document payload."""
+    return {key: value for key, value in compare_documents(results, arm, baseline).items()
+            if not key.startswith("_")}
+
+
+def has_rate(mention: dict) -> bool:
+    """Return True when the mention carries at least one palier with a numeric rate."""
+    return any(palier.get("taux_valeur") is not None for palier in mention["paliers"])
+
+
+def divergence_rows(results: pd.DataFrame) -> list[dict]:
+    """Every mention that could not be aligned exactly, for manual review."""
     rows = []
     by_arm = {arm: frame.set_index("reference") for arm, frame in results.groupby("arm")}
     if "full" not in by_arm:
         return rows
 
-    references = sorted(by_arm["full"].index)
-    for reference in references:
+    for reference in sorted(by_arm["full"].index):
         full_mentions = parse_mentions(by_arm["full"].loc[reference, "mentions_json"])
         for arm, frame in by_arm.items():
             if arm == "full" or reference not in frame.index:
                 continue
             mentions = parse_mentions(frame.loc[reference, "mentions_json"])
             outcome = match_mentions(mentions, full_mentions)
-            if outcome["unmatched_left"] or outcome["unmatched_right"] or outcome["partial"]:
+            if outcome["arm_only"] or outcome["full_only"] or outcome["bounds"]:
                 rows.append(
                     {
                         "reference": reference,
                         "arm": arm,
                         "n_mentions": len(mentions),
                         "n_full": len(full_mentions),
-                        "n_partial": len(outcome["partial"]),
-                        "n_unmatched": len(outcome["unmatched_left"]),
-                        "n_missing": len(outcome["unmatched_right"]),
-                        "mentions": [mentions[i] for i in outcome["unmatched_left"]],
-                        "partial_pairs": [
-                            (mentions[i], full_mentions[j]) for i, j in outcome["partial"]
+                        "bounds_pairs": [
+                            (mentions[i], full_mentions[j]) for i, j in outcome["bounds"]
                         ],
-                        "missing_mentions": [full_mentions[i] for i in outcome["unmatched_right"]],
+                        "label_pairs": [
+                            (mentions[i], full_mentions[j]) for i, j in outcome["same_rule"]
+                        ],
+                        "arm_only": [mentions[i] for i in outcome["arm_only"]],
+                        "full_only": [full_mentions[j] for j in outcome["full_only"]],
                     }
                 )
     return rows
@@ -203,43 +255,61 @@ def format_mention(mention: dict) -> str:
 
 def write_review(cap: int, results: pd.DataFrame) -> int:
     """Manual-adjudication file: ambiguous documents with every arm side by side."""
-    rows = disagreement_rows(results, cap)
+    rows = divergence_rows(results)
     by_reference: dict[str, list[dict]] = defaultdict(list)
     for row in rows:
         by_reference[row["reference"]].append(row)
 
+    def divergence(row: dict) -> int:
+        return len(row["bounds_pairs"]) + len(row["arm_only"]) + len(row["full_only"])
+
     ranked = sorted(
         by_reference.items(),
-        key=lambda item: sum(r["n_unmatched"] + r["n_missing"] for r in item[1]),
+        key=lambda item: sum(divergence(row) for row in item[1]),
         reverse=True,
     )
 
     lines = [
         f"# Manual review — ceiling {cap} chars",
         "",
-        "Mentions the matcher could not align with the `full` arm, or aligned only "
-        "partially (same nature/threshold/population, different paliers).",
-        f"{len(ranked)} document(s) need adjudication; the {min(len(ranked), MAX_REVIEW_DOCS)} "
-        "largest disagreements are listed below.",
+        "Mentions that the matcher could not align exactly with the `full` arm. "
+        "`bounds` pairs are the same rule with different palier boundaries; "
+        "`arm only` / `full only` are rules present in one arm and absent from the other; "
+        "`labels` pairs are the same rule described with another nature, threshold or "
+        "population (labelling noise, listed last, usually no adjudication needed).",
+        f"{len(ranked)} document(s) diverge; the {min(len(ranked), MAX_REVIEW_DOCS)} "
+        "largest divergences are listed below.",
         "",
     ]
     for reference, arm_rows in ranked[:MAX_REVIEW_DOCS]:
-        total = sum(r["n_unmatched"] + r["n_missing"] for r in arm_rows)
-        lines += [f"## {reference} — {total} disagreeing mention(s)", ""]
+        total = sum(divergence(row) for row in arm_rows)
+        lines += [f"## {reference} — {total} mention(s) not exactly aligned", ""]
         for row in arm_rows:
             lines += [f"### {row['arm']} ({row['n_mentions']} mentions)", ""]
-            if row["partial_pairs"]:
-                lines += ["Same nature/threshold/population, different paliers:", ""]
-                for arm_mention, full_mention in row["partial_pairs"]:
+            if row["bounds_pairs"]:
+                lines += ["Different palier boundaries:", ""]
+                for arm_mention, full_mention in row["bounds_pairs"]:
                     lines.append(f"{row['arm']}: {format_mention(arm_mention).lstrip('- ')}")
                     lines.append(f"full: {format_mention(full_mention).lstrip('- ')}")
                     lines.append("")
-            if row["mentions"]:
+            if row["arm_only"]:
                 lines += ["Only in this arm:", ""]
-                lines += [format_mention(mention) for mention in row["mentions"]] + [""]
-            if row["missing_mentions"]:
+                lines += [format_mention(mention) for mention in row["arm_only"]] + [""]
+            if row["full_only"]:
                 lines += ["Only in `full` (missing here):", ""]
-                lines += [format_mention(mention) for mention in row["missing_mentions"]] + [""]
+                lines += [format_mention(mention) for mention in row["full_only"]] + [""]
+            if row["label_pairs"]:
+                lines += ["Same rule, other labels:", ""]
+                for arm_mention, full_mention in row["label_pairs"]:
+                    lines.append(
+                        f"  `{arm_mention.get('nature')}` / seuil "
+                        f"{arm_mention.get('seuil_declenchement')} / "
+                        f"{arm_mention.get('population_concernee') or '-'}  vs  "
+                        f"`{full_mention.get('nature')}` / seuil "
+                        f"{full_mention.get('seuil_declenchement')} / "
+                        f"{full_mention.get('population_concernee') or '-'}"
+                    )
+                lines.append("")
         lines.append("")
 
     review_path(cap).write_text("\n".join(lines), encoding="utf-8")
@@ -247,6 +317,7 @@ def write_review(cap: int, results: pd.DataFrame) -> int:
 
 
 def load_results(cap: int) -> pd.DataFrame:
+    """Successful rows of one ceiling."""
     frame = pd.read_json(results_path(cap), lines=True)
     return frame[frame["erreur"].isna()]
 

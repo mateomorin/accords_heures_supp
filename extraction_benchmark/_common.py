@@ -89,7 +89,19 @@ def review_path(cap: int) -> Path:
     return BENCH_DIR / f"manual_review_{cap // 1000}k.md"
 
 
+def citations_path(cap: int) -> Path:
+    """Source-document verification of every citation, one line per mention."""
+    return BENCH_DIR / f"citations_{cap // 1000}k.jsonl"
+
+
 REPORT_PATH = BENCH_DIR / "REPORT.md"
+FINDINGS_PATH = BENCH_DIR / "FINDINGS.md"
+
+# Model actually used by the pipeline (`llm.llm_model` in configs/config.yaml).
+# Mistral Medium 3 list price, USD per million tokens; override if the gateway bills
+# differently — every cost in the report is linear in these two numbers.
+PRICE_IN_PER_M = 0.40
+PRICE_OUT_PER_M = 2.00
 
 
 __all__ = [
@@ -98,7 +110,10 @@ __all__ = [
     "CAPS",
     "COLUMNS",
     "EXTRACTION_DIR",
+    "FINDINGS_PATH",
     "LEGACY_COLLECTION",
+    "PRICE_IN_PER_M",
+    "PRICE_OUT_PER_M",
     "PROMPTS_DIR",
     "REPORT_PATH",
     "ROOT",
@@ -107,6 +122,7 @@ __all__ = [
     "build_context",
     "build_outline",
     "build_services",
+    "citations_path",
     "expand_subtrees",
     "find_anchor_ids",
     "load_config",

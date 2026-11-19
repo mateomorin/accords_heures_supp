@@ -157,15 +157,24 @@ async def flat_context(
     return "\n\n".join(item.page_content for item in retrieved), len(retrieved)
 
 
+TOLERANCE_CHARS = 100
+
+
 def full_context(parts: list[dict], profile, cap: int) -> tuple[str, int]:
-    """Whole document, rendered exactly as the production pipeline renders it."""
+    """
+    Whole document, rendered exactly as the production pipeline renders it.
+
+    The sample measures the rendered length without the anchor tag, which the renderer
+    then appends to each application-scope heading; a document may therefore exceed the
+    ceiling by a few characters. `TOLERANCE_CHARS` absorbs that measurement gap.
+    """
     anchor_ids = expand_subtrees(parts, find_anchor_ids(parts, list(profile.anchor_titles)))
     tag = profile.anchor_tag
     if not anchor_ids:
         anchor_ids = expand_subtrees(parts, preamble_ids(parts))
         tag = profile.get("preamble_tag", tag)
     text = render_document(parts, set(anchor_ids), tag)
-    if len(text) > cap:
+    if len(text) > cap + TOLERANCE_CHARS:
         raise ValueError(f"Document above the {cap} ceiling: {len(text)} chars")
     return text, len(parts)
 
@@ -250,7 +259,18 @@ async def run_one(
         try:
             parts = parts_index[sample_row.reference]
             meter = UsageMeter()
-            selector = selector_chain.with_config(callbacks=[meter]) if selector_chain else None
+            # The tracer must be attached here too: `with_config(callbacks=...)` scopes
+            # callbacks to this runnable, so a selector built with only the meter is
+            # invisible in MLflow even though it is a real LLM call.
+            selector = (
+                selector_chain.with_config(
+                    callbacks=[meter, mlflow_handler],
+                    run_name=f"outline-selector-{sample_row.reference}",
+                    metadata={"reference": sample_row.reference, "arm": arm},
+                )
+                if selector_chain
+                else None
+            )
 
             context_started = time.perf_counter()
             text, n_context, mode = await with_retries(
@@ -300,6 +320,26 @@ async def run_one(
 
     row["latency_s"] = time.perf_counter() - started
     return row
+
+
+def load_done(path) -> set[tuple[str, str]]:
+    """
+    Successful `(reference, arm)` pairs already in a results file.
+
+    Failed rows are dropped from the file so that `--resume` retries exactly them,
+    without producing duplicates.
+    """
+    if not path.exists():
+        return set()
+    kept = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("erreur") is None:
+            kept.append(line)
+    path.write_text("\n".join(kept) + ("\n" if kept else ""), encoding="utf-8")
+    return {(json.loads(line)["reference"], json.loads(line)["arm"]) for line in kept}
 
 
 def missing_references(client, collection: str, references: list[str]) -> set[str]:
@@ -390,6 +430,10 @@ async def main_async(args) -> None:
             print(f"[{cap}] no document left after the pre-flight, skipping")
             continue
 
+        done = load_done(results_path(cap)) if args.resume else set()
+        if done:
+            print(f"[{cap}] {len(done)} run(s) already done, resuming")
+
         tasks = [
             run_one(
                 row, arm, cap, chain, selector_chain, services, stores, parts_index,
@@ -397,11 +441,15 @@ async def main_async(args) -> None:
             )
             for row in sample.itertuples()
             for arm in arms
+            if (row.reference, arm) not in done
         ]
+        if not tasks:
+            print(f"[{cap}] nothing left to run")
+            continue
         print(f"[{cap}] {len(sample)} documents x {len(arms)} arms = {len(tasks)} runs")
 
         path = results_path(cap)
-        with path.open("w", encoding="utf-8") as out:
+        with path.open("a" if args.resume else "w", encoding="utf-8") as out:
             for future in tqdm_asyncio.as_completed(tasks, desc=f"benchmark {cap}"):
                 row = await future
                 payload = {column: row.get(column) for column in COLUMNS}
@@ -426,6 +474,11 @@ def main() -> None:
     )
     parser.add_argument("--limit", type=int, default=0, help="Only the first N sampled documents.")
     parser.add_argument("--concurrency", type=int, default=5, help="Max simultaneous runs.")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Keep successful runs already in the results file and retry the others.",
+    )
     mlflow.set_experiment("benchmark-cap-majoration")
     asyncio.run(main_async(parser.parse_args()))
 

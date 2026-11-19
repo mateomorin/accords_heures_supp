@@ -5,44 +5,48 @@ of agreements whose whole rendered text fits under 20k, 30k and 40k characters.
 
 | Arm | Context |
 | --- | --- |
-| `full` | the whole document, rendered in document order with structural headers |
+| `full` | the whole document, rendered in document order with structural headers — **the reference** |
 | `structured` | production hybrid pipeline, forced: anchors + outline selector + similarity + sibling completion |
 | `flat_legacy` | chunk similarity on the previous collection (`accords_heures_supp`) |
 | `flat_v2` | chunk similarity on the new parts collection (`accords_heures_supp_parts`) |
 
-All arms share the same prompt, the same schema, the same model and the same temperature:
-only the context construction differs. The benchmark calls the LLM; it is not a unit test.
+All arms share the same prompt, schema, model, temperature and per-document budget: only
+the context construction differs. The benchmark calls the LLM; it is not a unit test.
 
 ## Protocol
 
 - **Samples.** For each ceiling (20k, 30k, 40k), 25 documents per signature year
   (2018–2025) are drawn at evenly spaced quantiles of rendered size *among the documents
-  under that ceiling*. The three samples are independent: the 20k sample is not a subset
-  of the 30k one. 200 documents per ceiling.
+  under that ceiling and rendering to more than 0 characters*. The three samples are
+  independent. 200 documents per ceiling, 199 after the pre-flight.
 - **Budget.** The ceiling under test is also the context budget: `max_document_chars` and
   `max_context_chars` are both set to it, and the flat contexts stop adding chunks when
-  that budget is reached (chunks are never truncated).
-- **Benchmark-only prompts.** `section_ids` is removed from the prompt and from the
-  schema (`schema.py`), because the flat arms receive chunks without `[section_id]`
-  headers and could not satisfy the requirement. Every other instruction is the
-  production one; the production prompt is the reference.
+  that budget is reached (chunks are never truncated). The `full` arm tolerates
+  `TOLERANCE_CHARS = 100` above the ceiling: the sample measures the rendered length
+  without the application-scope tag that the renderer then appends.
+- **Benchmark-only prompts.** `section_ids` is removed from the prompt and the schema,
+  because the flat arms receive chunks without `[section_id]` headers. Every other
+  instruction is the production one.
 - **Pre-flight.** Each sampled reference must have at least one point in both
-  collections; references absent from a collection are dropped from that ceiling's run so
-  that no arm is scored on an empty context.
-- **Metrics.** Exact API token usage (extraction call, plus the outline selector for
-  `structured`), context and LLM latency separately, mentions / rules / paliers per
-  document, and verbatim-citation grounding (the citation must be a substring of the
-  context actually sent).
-- **Matching.** Mentions are compared with an order-insensitive matcher (`match.py`):
-  exact match on nature / threshold / population / paliers first, then a partial match
-  when only the paliers differ. What remains is written to `manual_review_<cap>.md` with
-  every arm side by side, for adjudication by hand.
+  collections; references absent from a collection are dropped so that no arm is scored
+  on an empty context.
+- **Matching.** Mentions are aligned with an order-insensitive matcher (`match.py`) in
+  three tiers: `exact` (nature, threshold, population, palier set), `same_rule` (same
+  palier set, other labels) and `bounds` (same labels, other paliers). What remains is
+  `arm_only` / `full_only` — the only real content divergence — and is written to
+  `manual_review_<cap>.md`.
+- **Verification.** `verify.py` re-reads the text each arm was built from (v2 parts from
+  S3, legacy chunks from Qdrant) and classifies every citation as `exact`, `partial`
+  (verbatim run of ten words plus rewritten material) or `fabricated` (no such run).
+- **Cost.** Exact token usage, selector included, priced with `PRICE_IN_PER_M` and
+  `PRICE_OUT_PER_M` from `_common.py` (Mistral Medium 3 list price; adjust if the gateway
+  bills differently). Latency is reported for completeness only.
 
 ## Prerequisites
 
-- `accords_heures_supp_parts` must be built by `src/rag/embed_chunks.py` (the
-  `structured` and `flat_v2` arms query it) and be complete for the sampled years.
-- The legacy collection `accords_heures_supp` must still exist (`flat_legacy`).
+- `accords_heures_supp_parts` built by `src/rag/embed_chunks.py` (`structured`, `flat_v2`),
+  `accords_heures_supp` still present (`flat_legacy`).
+- S3 and Qdrant credentials in `.env` for `sample.py` and `verify.py`.
 
 ## Run
 
@@ -50,31 +54,34 @@ only the context construction differs. The benchmark calls the LLM; it is not a 
 # 1. deterministic samples (reads the v2 shards, computes the rendered size)
 uv run extraction_benchmark/sample.py
 
-# 2. benchmark: 3 ceilings x 200 documents x 4 arms = 2400 extraction calls
+# 2. benchmark: 3 ceilings x 199 documents x 4 arms
 uv run extraction_benchmark/run.py --concurrency 5
-uv run extraction_benchmark/run.py --caps 20000 --arms full,structured --limit 20  # quick check
+uv run extraction_benchmark/run.py --resume            # keep successful runs, retry the rest
+uv run extraction_benchmark/run.py --caps 20000 --arms full,structured --limit 20
 
-# 3. agreement statistics and manual-review files
+# 3. tiered agreement + manual review files
 uv run extraction_benchmark/match.py
 
-# 4. report
+# 4. citation verification against the source text (S3 + Qdrant, no LLM)
+uv run extraction_benchmark/verify.py
+
+# 5. report and findings (no network)
 uv run extraction_benchmark/analyze.py
 ```
 
-Outputs, all git-ignored except the report and the scripts:
+Outputs, all git-ignored except the report, the findings and the scripts:
 
-- `samples_<cap>.parquet`, `results_<cap>.jsonl`, `manual_review_<cap>.md`,
-- `REPORT.md` (aggregated tables and observations).
+- `samples_<cap>.parquet`, `results_<cap>.jsonl`, `citations_<cap>.jsonl`,
+- `manual_review_<cap>.md`, `REPORT.md`, `FINDINGS.md`.
 
 ## Reading the results
 
-- `mentions/doc`, `rules/doc` and `paliers/doc` are yields, not accuracy: a higher yield
-  can mean better recall or more hallucination. The grounding rate and the manual review
-  file tell them apart.
-- `exact+partial match (%)` measures how much of an arm's output is found in the `full`
-  arm; `full mentions covered (%)` measures what the arm misses. Neither is truth: they
-  quantify divergence from the reference arm.
-- The flat arms see far fewer characters by construction (`context_chars`,
-  `tokens_in/doc`); that difference is the point of the comparison, not a bias to hide.
-- The outline selector is an extra LLM call: its tokens are reported separately
-  (`selector_tokens_in/out`) and its latency is inside `context_s`.
+- `full` is the reference, not truth: a divergence means two contexts led to different
+  extractions, not that `full` is right.
+- Read yield with agreement: `identical` mixes content loss with wording, which is why
+  the tiers exist. Section 6 of the report restricts the comparison to rate-bearing
+  rules and is the one to look at first.
+- The flat arms see far fewer characters by construction; that difference is the point
+  of the comparison, not a bias to hide.
+- `structured` also pays for an outline selector: its tokens are reported separately and
+  included in the cost columns.
