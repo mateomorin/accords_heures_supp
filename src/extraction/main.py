@@ -160,12 +160,15 @@ async def structured_context(
     queries: list[str],
     vector_store: VectorStore,
     ref_key: str,
+    force_hybrid: bool = False,
 ) -> tuple[str, dict]:
     """
     Context of one document: whole document when it fits, hybrid retrieval otherwise.
 
     Full reading is bounded by `max_document_chars`; the hybrid context is bounded by
     `max_context_chars` so that it never exceeds what a full reading would have cost.
+    `force_hybrid` skips the full-reading shortcut (used to benchmark the hybrid path
+    on documents that would otherwise be read in full).
     """
     anchor_ids = expand_subtrees(
         parts, find_anchor_ids(parts, list(retrieval.anchor_titles))
@@ -179,7 +182,7 @@ async def structured_context(
     anchor_set = set(anchor_ids)
 
     full_text = render_document(parts, anchor_set, anchor_tag)
-    if len(full_text) <= retrieval.max_document_chars:
+    if not force_hybrid and len(full_text) <= retrieval.max_document_chars:
         return full_text, {
             "mode": "full",
             "anchor_source": anchor_source,
@@ -224,6 +227,46 @@ async def structured_context(
     info["n_parts"] = len(parts)
     info["n_outline_chars"] = len(outline)
     return text, info
+
+
+async def flat_context(
+    ref_value: str,
+    queries: list[str],
+    vector_store: VectorStore,
+    top_k: int,
+    ref_key: str,
+) -> tuple[str, dict]:
+    """
+    Retrieve chunks based on similarity only.
+
+    Mutliple queries allowed, first with top_k retrieved chunks, the next ones with one chunk.
+    """
+    retrieved_chunks = []
+    seen_point_ids = set()
+    info = dict()
+
+    for i, query in enumerate(queries):
+        current_k = top_k if i == 0 else 1
+        retriever = retriever_factory(
+            vector_store=vector_store,
+            ref_key=ref_key,
+            ref_value=ref_value,
+            top_k=current_k,
+            exclude_point_ids=list(seen_point_ids) if seen_point_ids else None
+        )
+
+        chunks = await retriever.ainvoke(query)
+        for chunk in chunks:
+            point_id = chunk.metadata["chunk_id"]
+
+            if point_id not in seen_point_ids:
+                seen_point_ids.add(point_id)
+                retrieved_chunks.append(chunk)
+
+    info["n_chunks"] = len(retrieved_chunks)
+    info["context_chars"] = sum(len(chunk.page_content) for chunk in retrieved_chunks)
+
+    return chunk, info
 
 
 # --------------------------------------------------------------------------- #
@@ -283,30 +326,14 @@ async def extract_one(
                     row["erreur"] = "Aucune requête fournie."
                     return row
 
-                # Chunk id = point id
-                retrieved_chunks = []
-                seen_point_ids = set()
-
-                for i, query in enumerate(queries):
-                    current_k = top_k if i == 0 else 1
-                    retriever = retriever_factory(
-                        vector_store=vector_store,
-                        ref_key=ref_key,
-                        ref_value=ref_value,
-                        top_k=current_k,
-                        exclude_point_ids=list(seen_point_ids) if seen_point_ids else None
-                    )
-
-                    chunks = await retriever.ainvoke(query)
-                    for chunk in chunks:
-                        point_id = chunk.metadata["chunk_id"]
-
-                        if point_id not in seen_point_ids:
-                            seen_point_ids.add(point_id)
-                            retrieved_chunks.append(chunk)
-
-                row["n_chunks"] = len(retrieved_chunks)
-                row["context_chars"] = sum(len(chunk.page_content) for chunk in retrieved_chunks)
+                retrieved_chunks, info = await flat_context(
+                    ref_value=ref_value,
+                    queries=queries,
+                    vector_store=vector_store,
+                    top_k=top_k,
+                    ref_key=ref_key,
+                )
+                row.update(info)
 
                 if not retrieved_chunks:
                     row["erreur"] = "Aucun chunk retrouvé pour cette référence."

@@ -25,8 +25,8 @@ class ServiceContainer:
         # Embeddings
         self.embeddings = OpenAIEmbeddings(
             model=cfg.llm.embedding_model,
-            base_url=os.environ["LLM_API_URL"],
-            api_key=os.environ["LLM_API_KEY"],
+            base_url=os.environ["EMBED_API_URL"],
+            api_key=os.environ["EMBED_API_KEY"],
             check_embedding_ctx_length=False
         )
 

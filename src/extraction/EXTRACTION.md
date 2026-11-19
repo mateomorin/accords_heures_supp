@@ -71,6 +71,10 @@ in `s3://mateomorin/legifrance/rag/v2/shards`, produced by `src/preprocessing`):
      the budget allows (antecedent first), up to `max_siblings` children.
    - the final context is always rendered in **document order**; anchors are never dropped.
 
+The full-reading shortcut can be bypassed with `force_hybrid=True` (used by
+`extraction_benchmark/` to measure the hybrid path on documents that would otherwise be
+read in full); the rest of the pipeline is unchanged.
+
 The parts used for rendering are read from S3 (one streaming pass per year, only the year
 kept in memory); Qdrant is only used to rank sections.
 
