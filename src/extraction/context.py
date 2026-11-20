@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from collections import Counter, defaultdict
+from math import log
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -168,22 +169,59 @@ def render_document(parts: list[dict[str, Any]], anchor_ids: set[str], anchor_ta
     return "\n\n".join(render_part(part, anchor_ids, anchor_tag) for part in ordered)
 
 
+def selector_section_budget(
+    n_parts: int,
+    *,
+    min_parts: int,
+    max_parts: int,
+    small_doc_parts: int,
+    large_doc_parts: int,
+) -> int:
+    """
+    How many sections the selector may pick in a document of `n_parts` parts.
+
+    Log interpolation between two anchors (e.g. 2 picks for a 5-part document, 10 for a
+    30-part one): the number of relevant sections grows much slower than the document, so
+    a linear rule over-selects on the big agreements. Clamped to `[min_parts, max_parts]`.
+    """
+    if large_doc_parts <= small_doc_parts:
+        return max_parts
+    if n_parts <= small_doc_parts:
+        return min_parts
+    if n_parts >= large_doc_parts:
+        return max_parts
+    ratio = log(n_parts / small_doc_parts) / log(large_doc_parts / small_doc_parts)
+    return round(min_parts + (max_parts - min_parts) * ratio)
+
+
 def build_context(
     parts: list[dict[str, Any]],
     anchor_ids: list[str],
     selected_ids: list[str],
     similarity_ids: list[str],
+    sibling_scores: dict[str, float],
     *,
-    max_chars: int,
     max_siblings: int,
+    max_sibling_chars: int,
+    max_family_size: int,
+    max_picked_chars: int,
     anchor_tag: str,
 ) -> tuple[str, dict[str, int]]:
     """
-    Assemble the hybrid context under a character budget.
+    Assemble the hybrid context, layer by layer.
 
-    Layers, in allocation order: anchors (never dropped), selector picks, siblings of
-    selector picks (nearest first, lazily bounded), similarity hits. The final text is
-    always rendered in document order.
+    Layers: anchors (never dropped), selector picks, siblings of selector picks,
+    similarity hits. The final text is always rendered in document order.
+
+    There is no character budget here: the caller compares the rendered length with its
+    safety ceiling and falls back to chunk retrieval when the selection is still too big.
+
+    Sibling completion is deliberately narrow. At most `max_siblings` neighbours of a
+    picked section, ranked by their similarity to the majoration query
+    (`sibling_scores`), and only when the sibling is at most `max_sibling_chars` long.
+    Big families (more than `max_family_size` children) and big picked sections (more
+    than `max_picked_chars`) get no sibling at all: they are containers, and completing
+    them would just resend the document.
     """
     ordered = sorted(parts, key=lambda part: part["section_order"])
     by_id = {part["section_id"]: part for part in ordered}
@@ -191,6 +229,7 @@ def build_context(
     blocks = {
         part["section_id"]: render_part(part, set(anchor_ids), anchor_tag) for part in ordered
     }
+    sizes = {section_id: len(block) + 2 for section_id, block in blocks.items()}
 
     anchors = sorted({sid for sid in anchor_ids if sid in by_id}, key=order.get)
     selected = sorted(
@@ -205,25 +244,10 @@ def build_context(
         key=order.get,
     )
 
-    chosen: set[str] = set()
-    used = 0
-
-    def add(section_id: str, force: bool = False) -> bool:
-        nonlocal used
-        if section_id in chosen:
-            return True
-        size = len(blocks[section_id]) + 2
-        if not force and (used >= max_chars or used + size > max_chars):
-            return False
-        chosen.add(section_id)
-        used += size
-        return True
-
-    for section_id in anchors:
-        add(section_id, force=True)
-
-    for section_id in selected:
-        add(section_id)
+    chosen: set[str] = set(anchors)
+    after_anchors = set(chosen)
+    chosen.update(selected)
+    after_selected = set(chosen)
 
     by_parent: dict[str | None, list[dict[str, Any]]] = defaultdict(list)
     for part in ordered:
@@ -231,27 +255,34 @@ def build_context(
 
     for section_id in selected:
         family = by_parent.get(by_id[section_id].get("parent_id"), [])
-        if not 1 < len(family) <= max_siblings:
+        if not 1 < len(family) <= max_family_size:
             continue
-        position = next(
-            index for index, part in enumerate(family) if part["section_id"] == section_id
-        )
-        nearest_first = list(reversed(family[:position])) + family[position + 1 :]
-        for sibling in nearest_first:
-            if not add(sibling["section_id"]):
-                break
+        if sizes[section_id] > max_picked_chars:
+            continue
+        siblings = [
+            part["section_id"]
+            for part in family
+            if part["section_id"] != section_id
+            and sizes[part["section_id"]] <= max_sibling_chars
+        ]
+        siblings.sort(key=lambda sid: (-sibling_scores.get(sid, -1.0), order[sid]))
+        chosen.update(siblings[:max_siblings])
+    after_siblings = set(chosen)
 
-    for section_id in similar:
-        add(section_id)
+    chosen.update(similar)
+    after_similarity = set(chosen)
 
     rendered = "\n\n".join(blocks[section_id] for section_id in sorted(chosen, key=order.get))
-    siblings = chosen - set(anchors) - set(selected)
     info = {
-        "n_anchor_parts": len([sid for sid in anchors if sid in chosen]),
-        "n_selected_parts": len([sid for sid in selected if sid in chosen]),
-        "n_sibling_parts": len(siblings),
-        "n_similarity_parts": len([sid for sid in similar if sid in chosen]),
-        "n_context_parts": len(chosen),
+        "n_anchor_parts": len(after_anchors),
+        "n_selected_parts": len(after_selected) - len(after_anchors),
+        "n_sibling_parts": len(after_siblings) - len(after_selected),
+        "n_similarity_parts": len(after_similarity) - len(after_siblings),
+        "n_context_parts": len(after_similarity),
+        "n_anchor_chars": sum(sizes[sid] for sid in after_anchors),
+        "n_selected_chars": sum(sizes[sid] for sid in after_selected - after_anchors),
+        "n_sibling_chars": sum(sizes[sid] for sid in after_siblings - after_selected),
+        "n_similarity_chars": sum(sizes[sid] for sid in after_similarity - after_siblings),
         "context_chars": len(rendered),
     }
     return rendered, info

@@ -75,3 +75,31 @@ async def similarity_section_ids(
                 scores[section_id] = score
 
     return sorted(scores, key=scores.get, reverse=True)
+
+
+async def section_scores(
+    vector_store: VectorStore,
+    ref_key: str,
+    ref_value: str,
+    query: str,
+    limit: int,
+) -> dict[str, float]:
+    """
+    Best cosine score of each section of one document for one query.
+
+    Used to rank sibling candidates: only the `limit` best chunks of the document are
+    scored, so a section that was not retrieved simply has no entry (`-1.0` in the
+    ranking). `limit` must therefore cover the chunks of the document, not its parts.
+    """
+    hits = await vector_store.asimilarity_search_with_score(
+        query, k=limit, filter=reference_filter(ref_key=ref_key, ref_value=ref_value)
+    )
+    scores: dict[str, float] = {}
+    for document, score in hits:
+        section_id = document.metadata.get("section_id")
+        if not section_id:
+            continue
+        previous = scores.get(section_id)
+        if previous is None or score > previous:
+            scores[section_id] = score
+    return scores

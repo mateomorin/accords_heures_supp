@@ -57,19 +57,26 @@ in `s3://mateomorin/legifrance/rag/v2/shards`, produced by `src/preprocessing`):
 1. **Full reading** when the rendered document is at most `max_document_chars`. Sections
    are rendered in document order with a `### [section_id] title` header, their breadcrumb
    and their tables.
-2. Otherwise **hybrid retrieval**, bounded by `max_context_chars`:
+2. Otherwise **hybrid retrieval**, with `max_context_chars` as a safety ceiling only:
    - **anchors**: every part whose title literally contains one of `anchor_titles` (all
      matches are kept, a document may carry several application-scope sections), plus their
-     subtree. If none exists, the document preambles are used as a fallback
+     subtree, with no cap. If none exists, the document preambles are used as a fallback
      (`preamble_tag`) and `anchor_source` records it.
    - **outline selector**: one LLM call on a compact outline (id, number, title, size,
      sub-section count) returns the section ids worth reading. Only ids present in the
-     outline are kept.
+     outline are kept. The number of picks is capped by `selector_section_budget`
+     (log interpolation between `selector_min_parts` and `selector_max_parts`) and the cap
+     is appended to the outline sent to the selector.
    - **similarity**: the profile queries, `similarity_top_k` chunks per query, deduplicated
      per section, capped by `max_similarity_parts`.
-   - **sibling completion**: for each selector pick, the nearest siblings are added while
-     the budget allows (antecedent first), up to `max_siblings` children.
+   - **sibling completion**: for each selector pick, at most `max_siblings` neighbours,
+     ranked by their similarity to `sibling_query`, and only when the sibling renders to
+     at most `max_sibling_chars`. No sibling at all when the family holds more than
+     `max_family_size` children or when the picked section itself renders to more than
+     `max_picked_chars`.
    - the final context is always rendered in **document order**; anchors are never dropped.
+3. If the hybrid context still exceeds `max_context_chars`, the document **falls back to
+   chunk retrieval** (`mode: "flat_fallback"`): the structural layers failed to bound it.
 
 The full-reading shortcut can be bypassed with `force_hybrid=True` (used by
 `extraction_benchmark/` to measure the hybrid path on documents that would otherwise be

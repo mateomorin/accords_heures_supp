@@ -15,6 +15,7 @@ from context import (
     find_anchor_ids,
     preamble_ids,
     render_document,
+    selector_section_budget,
 )
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
@@ -30,7 +31,7 @@ from s3fs import S3FileSystem
 from services import ServiceContainer
 from tqdm.asyncio import tqdm_asyncio
 
-from rag import load_parts_index, reference_filter, similarity_section_ids
+from rag import load_parts_index, reference_filter, section_scores, similarity_section_ids
 
 SCRIPT_DIR = Path(__file__).parent
 
@@ -165,8 +166,9 @@ async def structured_context(
     """
     Context of one document: whole document when it fits, hybrid retrieval otherwise.
 
-    Full reading is bounded by `max_document_chars`; the hybrid context is bounded by
-    `max_context_chars` so that it never exceeds what a full reading would have cost.
+    Full reading is used up to `max_document_chars`. Above it, the hybrid context is
+    assembled without a character budget; the caller checks it against
+    `max_context_chars` and falls back to chunk retrieval when it is still too big.
     `force_hybrid` skips the full-reading shortcut (used to benchmark the hybrid path
     on documents that would otherwise be read in full).
     """
@@ -199,20 +201,31 @@ async def structured_context(
     if selector_chain is None:
         raise ValueError("The 'structured' retrieval mode requires a selector prompt.")
 
+    max_sections = selector_section_budget(
+        len(parts),
+        min_parts=retrieval.selector_min_parts,
+        max_parts=retrieval.selector_max_parts,
+        small_doc_parts=retrieval.selector_small_doc_parts,
+        large_doc_parts=retrieval.selector_large_doc_parts,
+    )
     outline = build_outline(parts, retrieval.max_outline_chars)
+    # The cap depends on the document, so it travels with the outline instead of living
+    # in the prompt template, which serves every document and is shared with the benchmark.
     selection = await selector_chain.ainvoke(
-        {"outline": outline},
+        {"outline": f"{outline}\n\nSélectionne au plus {max_sections} sections."},
         config={
             "callbacks": [mlflow_handler],
-            "run_name": f"extraction-{ref_value}",
+            "run_name": f"outline-selector-{ref_value}",
             "metadata": {
                 "reference": ref_value,
-                "year": retrieval.year
+                "max_sections": max_sections,
             }
         }
     )
     known = {part["section_id"] for part in parts}
-    selected_ids = [sid for sid in (selection.section_ids if selection else []) if sid in known]
+    selected_ids = [
+        sid for sid in (selection.section_ids if selection else []) if sid in known
+    ][:max_sections]
 
     similarity_ids = await similarity_section_ids(
         vector_store=vector_store,
@@ -223,19 +236,33 @@ async def structured_context(
     )
     similarity_ids = similarity_ids[: retrieval.max_similarity_parts]
 
+    # Sibling candidates are ranked by their similarity to the majoration query; a part
+    # is split into one to a few chunks, hence the margin on the number of hits.
+    sibling_scores = await section_scores(
+        vector_store=vector_store,
+        ref_key=ref_key,
+        ref_value=ref_value,
+        query=retrieval.sibling_query,
+        limit=max(4 * len(parts), 50),
+    )
+
     text, info = build_context(
         parts,
         anchor_ids=anchor_ids,
         selected_ids=selected_ids,
         similarity_ids=similarity_ids,
-        max_chars=retrieval.max_context_chars,
+        sibling_scores=sibling_scores,
         max_siblings=retrieval.max_siblings,
+        max_sibling_chars=retrieval.max_sibling_chars,
+        max_family_size=retrieval.max_family_size,
+        max_picked_chars=retrieval.max_picked_chars,
         anchor_tag=anchor_tag,
     )
     info["mode"] = "hybrid"
     info["anchor_source"] = anchor_source
     info["n_parts"] = len(parts)
     info["n_outline_chars"] = len(outline)
+    info["max_sections"] = max_sections
     return text, info
 
 
@@ -276,7 +303,7 @@ async def flat_context(
     info["n_chunks"] = len(retrieved_chunks)
     info["context_chars"] = sum(len(chunk.page_content) for chunk in retrieved_chunks)
 
-    return chunk, info
+    return retrieved_chunks, info
 
 
 # --------------------------------------------------------------------------- #
@@ -327,6 +354,39 @@ async def extract_one(
                     vector_store=vector_store,
                     ref_key=ref_key,
                 )
+                if len(context_text) > retrieval.max_context_chars:
+                    # The conservative selection still exceeds the safety ceiling: the
+                    # structural layers failed to bound this document, so use chunks.
+                    logger.warning(
+                        f"[{ref_value}] structured context above "
+                        f"{retrieval.max_context_chars} chars ({len(context_text)}), "
+                        "falling back to chunk retrieval"
+                    )
+                    retrieved_chunks, _ = await flat_context(
+                        ref_value=ref_value,
+                        queries=queries,
+                        vector_store=vector_store,
+                        top_k=top_k,
+                        ref_key=ref_key,
+                    )
+                    if not retrieved_chunks:
+                        row["erreur"] = "Aucun chunk retrouvé pour cette référence."
+                        return row
+                    context_text = "\n\n".join(
+                        chunk.page_content for chunk in retrieved_chunks
+                    )
+                    info = {
+                        "mode": "flat_fallback",
+                        "anchor_source": info.get("anchor_source"),
+                        "n_parts": info.get("n_parts"),
+                        "n_anchor_parts": 0,
+                        "n_selected_parts": 0,
+                        "n_sibling_parts": 0,
+                        "n_similarity_parts": 0,
+                        "n_context_parts": len(retrieved_chunks),
+                        "n_chunks": len(retrieved_chunks),
+                        "context_chars": len(context_text),
+                    }
                 row.update(info)
                 n_context = info["n_context_parts"]
 

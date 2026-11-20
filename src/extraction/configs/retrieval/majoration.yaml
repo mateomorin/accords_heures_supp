@@ -1,32 +1,49 @@
 # Retrieval profile: overtime majoration (structured mode).
 #
 # Full reading when the whole document fits in `max_document_chars`, hybrid retrieval
-# (anchors + outline selector + similarity) otherwise. The hybrid context is bounded by
-# `max_context_chars` so that it never exceeds a full reading.
+# (anchors + outline selector + similarity) otherwise. `max_context_chars` is only a
+# safety ceiling: if the conservative hybrid selection still exceeds it, the document
+# falls back to chunk retrieval.
 
 mode: structured
 collection: "accords_heures_supp_parts"
 parts_path: "s3://mateomorin/legifrance/rag/v2/shards"
 
 # Thresholds (characters of rendered context)
-max_document_chars: 30000
-max_context_chars: 30000
+max_document_chars: 20000
+max_context_chars: 60000
 max_outline_chars: 12000
 
-# Sections that are always included, whatever the selector says. Matched literally
-# (case/accent/apostrophe insensitive) against part titles; several matches are kept.
+# Sections that are always included, whatever the selector says, without any cap.
+# Matched literally (case/accent/apostrophe insensitive) against part titles; several
+# matches are kept.
 anchor_titles:
   - "champ d'application"
 anchor_tag: "CHAMP D'APPLICATION"
 # Used when no application-scope section exists and the preamble is used as fallback
 preamble_tag: "PREAMBULE — CHAMP D'APPLICATION NON EXPLICITE"
 
+# Outline selector: number of sections it may pick, log-interpolated between two anchors
+# (`min_parts` for a document of `small_doc_parts`, `max_parts` for `large_doc_parts`).
+selector_min_parts: 2
+selector_max_parts: 10
+selector_small_doc_parts: 5
+selector_large_doc_parts: 30
+
 # Similarity search over the part chunks
 similarity_top_k: 5
 max_similarity_parts: 12
 
-# Sibling completion around the selector picks
-max_siblings: 12
+# Sibling completion around the selector picks: at most `max_siblings` neighbours per
+# pick, chosen by their similarity to `sibling_query`, and only when the sibling is at
+# most `max_sibling_chars` long. No sibling at all when the family is bigger than
+# `max_family_size` children or when the picked section itself is bigger than
+# `max_picked_chars`.
+sibling_query: "majoration heures supplémentaires"
+max_siblings: 2
+max_sibling_chars: 800
+max_family_size: 10
+max_picked_chars: 2000
 
 # Outline selector prompts
 selector_system_prompt_file: "prompts/majoration/selector_system_prompt.txt"
