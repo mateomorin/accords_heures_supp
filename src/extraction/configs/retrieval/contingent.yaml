@@ -1,0 +1,7 @@
+# Retrieval profile: overtime contingent (legacy chunk similarity).
+#
+# `top_k` and the queries come from args/prompts as before: this profile only says how
+# the context is built, so the pipeline stays agnostic about what is being extracted.
+
+mode: similarity
+collection: "accords_heures_supp"

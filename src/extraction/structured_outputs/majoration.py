@@ -3,6 +3,12 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
+class NatureMention(str, Enum):
+    REGLE_CONVENTIONNELLE = "regle_conventionnelle"  # The agreement sets the rule itself
+    RAPPEL = "rappel"  # The text only recalls another text (law, CCN, prior agreement)
+    INDETERMINEE = "indeterminee"  # The text does not allow deciding
+
+
 class TypeMajoration(str, Enum):
     POURCENTAGE = "pourcentage"  # Ex: 25 for 25%
     COEFFICIENT = "coefficient"  # Ex: 1.25 for 125%
@@ -37,12 +43,14 @@ class PalierMajoration(BaseModel):
         default=None,
         description="Alternative au rang si le décompte se fait en nombre d'heures supplémentaires (ex: 8 pour 'les 8 premières heures sup').",
     )
-    taux_valeur: float = Field(
-        description="Valeur numérique de la majoration. Ex: 25.0 pour 25%, 1.25 pour un coefficient 1,25, ou 10.0 pour 10€/h.",
+    taux_valeur: float | None = Field(
+        default=None,
+        description="Valeur numérique de la majoration. Ex: 25.0 pour 25%, 1.25 pour un coefficient 1,25, ou 10.0 pour 10€/h. "
+                    "Null si le palier est évoqué sans qu'aucun taux ne soit chiffré dans le texte.",
     )
-    type_majoration: TypeMajoration = Field(
-        default=TypeMajoration.POURCENTAGE,
-        description="Unité de la valeur numérique renseignée.",
+    type_majoration: TypeMajoration | None = Field(
+        default=None,
+        description="Unité de la valeur numérique renseignée. Null si aucun taux n'est chiffré.",
     )
     application_globale: bool = Field(
         default=False,
@@ -58,43 +66,39 @@ class PalierMajoration(BaseModel):
     )
 
 
-class RegleMajoration(BaseModel):
+class MentionMajoration(BaseModel):
+    nature: NatureMention = Field(
+        description="Nature de la mention : règle fixée par l'accord, simple rappel d'un autre texte, "
+                    "ou nature indécidable."
+    )
     population_concernee: str | None = Field(
         default=None,
         description="Population ciblée (ex: 'Tous les salariés', 'Cadres en heures', 'Ouvriers', 'Personnel roulant', ...).",
     )
     seuil_declenchement: int | float | None = Field(
         default=None,
-        description="Durée de travail au-delà de laquelle les heures accomplies sont comptées considérées comme des heures supplémentaires, en heures (par exemple, 35). "
+        description="Durée de travail au-delà de laquelle les heures accomplies sont considérées comme des heures supplémentaires, en heures (par exemple, 35). "
                     "Correspond généralement à la durée de travail propre à l'entreprise."
     )
     paliers: list[PalierMajoration] = Field(
         default_factory=list,
-        description="Liste ordonnée des paliers de majoration applicables pour cette population/règle.",
+        description="Liste ordonnée des paliers de majoration applicables pour cette population/cette mention. "
+                    "Peut être vide si la mention est un rappel sans aucun taux chiffré.",
+    )
+    section_ids: list[str] = Field(
+        default_factory=list,
+        description="Identifiants des sections du contexte d'où provient la mention, recopiés depuis "
+                    "les crochets des en-têtes (ex: ['S12']). Ne jamais inventer d'identifiant.",
+    )
+    citation_exacte: str = Field(
+        description="Extrait exact du texte source (copié mot à mot) qui justifie la mention."
     )
 
 
 class ExtractionMajorations(BaseModel):
-    presence_regle_conventionnelle: bool = Field(
-        description=(
-            "True si le document définit explicitement des taux ou règles de majoration d'heures supplémentaires. "
-            "False si le document est muet ou renvoie purement au Code du travail sans précision."
-        )
-    )
-    regles_majorations: list[RegleMajoration] = Field(
+    mentions: list[MentionMajoration] = Field(
         default_factory=list,
-        description="Ensemble des règles de majoration identifiées par population ou cas de figure.",
-    )
-    citations_exactes: list[str] = Field(
-        default_factory=list,
-        description="Extrait(s) exact(s) du texte source mentionnant les taux de majoration.",
-    )
-    justification_ou_reserve: str | None = Field(
-        default=None,
-        description="Remarques explicatives (ex: renvoi à la convention collective nationale, dispositions temporaires).",
-    )
-    rappel_majoration: bool = Field(
-        default=False,
-        description="True si la majoration présentée est un rappel d'un autre texte légal (Code du Travail, accords d'entreprise, conventions collectives, ...) "
-                    "ou si un extrait mentionne explicitement un rappel pour la majoration."
+        description="Toutes les mentions de majoration des heures supplémentaires trouvées dans le "
+                    "texte, y compris les simples rappels sans taux chiffré. Liste vide si le texte "
+                    "n'en contient aucune.",
     )

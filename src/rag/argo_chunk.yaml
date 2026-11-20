@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: legifrance-chunk-
+  generateName: legifrance-embed-parts-
 spec:
   entrypoint: main-dag
-  parallelism: 4
+  parallelism: 1
   arguments:
     parameters:
       - name: collection
-        value: "accords_heures_supp"
+        value: "accords_heures_supp_parts"
   ttlStrategy:
     secondsAfterCompletion: 86400
   podGC:
@@ -18,38 +18,20 @@ spec:
     - name: main-dag
       dag:
         tasks:
-          - name: chunk-dataset
-            template: chunk-cpu
+          - name: embed-parts
+            template: embed-cpu
             arguments:
               parameters:
-                - name: data_folder
-                  value: "{{item.data_folder}}"
-                - name: themes
-                  value: "{{item.themes}}"
                 - name: collection
                   value: "{{workflow.parameters.collection}}"
-            withItems:
-              - { data_folder: "acco_data_2017_9_10_11_12", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2018", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2019", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2020", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2021", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2022", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2023", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2024", themes: "Heures supplémentaires (contingent, majoration)" }
-              - { data_folder: "acco_data_2025", themes: "Heures supplémentaires (contingent, majoration)" }
 
-    # --- TEMPLATE CPU ---
-    - name: chunk-cpu
+    - name: embed-cpu
       inputs:
         parameters:
-          - name: data_folder
-          - name: themes
           - name: collection
-      # Si le pod crash (OOM, éviction de nœud, erreur réseau, ...), Argo relance le script.
-      # Grâce aux checkpoints par shard (.done sur S3) et aux IDs de points déterministes
-      # (upsert idempotent), seuls les shards non terminés sont retraités, sans doublons.
-      # "Always" couvre aussi les OOMKilled (considérés comme des échecs, pas des erreurs).
+      # If the pod crashes (OOM, node eviction, network error, ...), Argo restarts it.
+      # Per-shard checkpoints (.done on S3) and deterministic point ids make the run
+      # resumable and idempotent: only unfinished shards are reprocessed, without duplicates.
       retryStrategy:
         limit: 3
         retryPolicy: "Always"
@@ -63,18 +45,17 @@ spec:
         source: |
           set -euo pipefail
 
-          git clone --depth 1 -b main https://github.com/mateomorin/accords_heures_supp.git
+          git clone --depth 1 -b feature/structured_rag https://github.com/mateomorin/accords_heures_supp.git
           cd accords_heures_supp
 
-          echo "Chunking + embeddings pour {{inputs.parameters.data_folder}} (themes: {{inputs.parameters.themes}})..."
-          uv run src/chunking/chunk_markdown.py \
-            --data_folder "{{inputs.parameters.data_folder}}" \
-            --themes "{{inputs.parameters.themes}}" \
-            --collection "{{inputs.parameters.collection}}"
+          echo "Chunking + embeddings of the v2 parts into {{inputs.parameters.collection}}..."
+          uv run src/rag/embed_chunks.py \
+            --collection "{{inputs.parameters.collection}}" \
+            --embed_concurrency 10
         resources:
           limits:
             cpu: "4000m"
-            memory: "12Gi"
+            memory: "16Gi"
           requests:
             cpu: "1000m"
             memory: "4Gi"

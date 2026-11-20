@@ -7,21 +7,31 @@ from pathlib import Path
 import hydra
 import mlflow
 import pandas as pd
+from context import (
+    SelectedSections,
+    build_context,
+    build_outline,
+    expand_subtrees,
+    find_anchor_ids,
+    preamble_ids,
+    render_document,
+    selector_section_budget,
+)
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables.base import Runnable
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 from mlflow.langchain.langchain_tracer import MlflowLangchainTracer
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from registry import get_structured_output
 from s3fs import S3FileSystem
+from services import ServiceContainer
 from tqdm.asyncio import tqdm_asyncio
 
-from registry import get_structured_output
-from services import ServiceContainer
-
+from rag import load_parts_index, reference_filter, section_scores, similarity_section_ids
 
 SCRIPT_DIR = Path(__file__).parent
 
@@ -39,7 +49,7 @@ for noisy in ("httpx", "httpx2", "httpcore", "qdrant_client", "openai", "s3fs", 
 
 
 # --------------------------------------------------------------------------- #
-# Prompts / query
+# Prompts / query / retrieval profile
 # --------------------------------------------------------------------------- #
 def create_prompt(system_prompt_file: str, user_prompt_file: str) -> ChatPromptTemplate:
     """
@@ -53,29 +63,33 @@ def create_prompt(system_prompt_file: str, user_prompt_file: str) -> ChatPromptT
 
 def create_queries(query_file) -> list[str]:
     """
-    Retrieve query from text file for similarity search.
+    Retrieve queries from a text file for similarity search (one query per line).
     """
-    return (SCRIPT_DIR / query_file).read_text(encoding="utf-8").split("\n")
+    lines = (SCRIPT_DIR / query_file).read_text(encoding="utf-8").split("\n")
+    return [line.strip() for line in lines if line.strip()]
+
+
+def load_retrieval(cfg: DictConfig) -> DictConfig:
+    """
+    Load the retrieval profile of the requested extraction type.
+
+    Profiles live in `configs/retrieval/<type>.yaml`: mode, collection, anchors,
+    thresholds and selector prompts. This is what keeps the pipeline itself agnostic
+    about the information being extracted.
+    """
+    path = SCRIPT_DIR / cfg.retrieval_dir / f"{cfg.args.type}.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"No retrieval profile for type '{cfg.args.type}': {path}")
+    return OmegaConf.load(path)
 
 
 # --------------------------------------------------------------------------- #
 # Qdrant : filters, reference listing, and RAG
 # --------------------------------------------------------------------------- #
-def reference_filter(ref_key: str, ref_value: str) -> models.Filter:
-    """
-    Basic filter on reference key.
-    """
-
-    return models.Filter(
-        must=[models.FieldCondition(key=ref_key, match=models.MatchValue(value=ref_value))]
-    )
-
-
 def year_filter(year_key: str, year_value: int) -> models.Filter:
     """
     Basic filter on year key.
     """
-
     return models.Filter(
         should=[
             models.FieldCondition(key=year_key, match=models.MatchValue(value=str(year_value))),
@@ -137,6 +151,162 @@ def retriever_factory(
 
 
 # --------------------------------------------------------------------------- #
+# Structured context (anchors + outline selector + similarity)
+# --------------------------------------------------------------------------- #
+async def structured_context(
+    ref_value: str,
+    parts: list[dict],
+    retrieval: DictConfig,
+    selector_chain: Runnable | None,
+    queries: list[str],
+    vector_store: VectorStore,
+    ref_key: str,
+    force_hybrid: bool = False,
+) -> tuple[str, dict]:
+    """
+    Context of one document: whole document when it fits, hybrid retrieval otherwise.
+
+    Full reading is used up to `max_document_chars`. Above it, the hybrid context is
+    assembled without a character budget; the caller checks it against
+    `max_context_chars` and falls back to chunk retrieval when it is still too big.
+    `force_hybrid` skips the full-reading shortcut (used to benchmark the hybrid path
+    on documents that would otherwise be read in full).
+    """
+    anchor_ids = expand_subtrees(
+        parts, find_anchor_ids(parts, list(retrieval.anchor_titles))
+    )
+    anchor_source = "title"
+    anchor_tag = retrieval.anchor_tag
+    if not anchor_ids:
+        anchor_ids = expand_subtrees(parts, preamble_ids(parts))
+        anchor_source = "preamble" if anchor_ids else "none"
+        anchor_tag = retrieval.get("preamble_tag", anchor_tag)
+    anchor_set = set(anchor_ids)
+
+    full_text = render_document(parts, anchor_set, anchor_tag)
+    if not force_hybrid and len(full_text) <= retrieval.max_document_chars:
+        return full_text, {
+            "mode": "full",
+            "anchor_source": anchor_source,
+            "n_parts": len(parts),
+            "n_anchor_parts": len(anchor_ids),
+            "n_selected_parts": 0,
+            "n_sibling_parts": 0,
+            "n_similarity_parts": 0,
+            "n_context_parts": len(parts),
+            "n_outline_chars": 0,
+            "context_chars": len(full_text),
+        }
+
+    if selector_chain is None:
+        raise ValueError("The 'structured' retrieval mode requires a selector prompt.")
+
+    max_sections = selector_section_budget(
+        len(parts),
+        min_parts=retrieval.selector_min_parts,
+        max_parts=retrieval.selector_max_parts,
+        small_doc_parts=retrieval.selector_small_doc_parts,
+        large_doc_parts=retrieval.selector_large_doc_parts,
+    )
+    outline = build_outline(parts, retrieval.max_outline_chars)
+    # The cap depends on the document, so it travels with the outline instead of living
+    # in the prompt template, which serves every document and is shared with the benchmark.
+    selection = await selector_chain.ainvoke(
+        {"outline": f"{outline}\n\nSélectionne au plus {max_sections} sections."},
+        config={
+            "callbacks": [mlflow_handler],
+            "run_name": f"outline-selector-{ref_value}",
+            "metadata": {
+                "reference": ref_value,
+                "max_sections": max_sections,
+            }
+        }
+    )
+    known = {part["section_id"] for part in parts}
+    selected_ids = [
+        sid for sid in (selection.section_ids if selection else []) if sid in known
+    ][:max_sections]
+
+    similarity_ids = await similarity_section_ids(
+        vector_store=vector_store,
+        ref_key=ref_key,
+        ref_value=ref_value,
+        queries=queries,
+        top_k=retrieval.similarity_top_k,
+    )
+    similarity_ids = similarity_ids[: retrieval.max_similarity_parts]
+
+    # Sibling candidates are ranked by their similarity to the majoration query; a part
+    # is split into one to a few chunks, hence the margin on the number of hits.
+    sibling_scores = await section_scores(
+        vector_store=vector_store,
+        ref_key=ref_key,
+        ref_value=ref_value,
+        query=retrieval.sibling_query,
+        limit=max(4 * len(parts), 50),
+    )
+
+    text, info = build_context(
+        parts,
+        anchor_ids=anchor_ids,
+        selected_ids=selected_ids,
+        similarity_ids=similarity_ids,
+        sibling_scores=sibling_scores,
+        max_siblings=retrieval.max_siblings,
+        max_sibling_chars=retrieval.max_sibling_chars,
+        max_family_size=retrieval.max_family_size,
+        max_picked_chars=retrieval.max_picked_chars,
+        anchor_tag=anchor_tag,
+    )
+    info["mode"] = "hybrid"
+    info["anchor_source"] = anchor_source
+    info["n_parts"] = len(parts)
+    info["n_outline_chars"] = len(outline)
+    info["max_sections"] = max_sections
+    return text, info
+
+
+async def flat_context(
+    ref_value: str,
+    queries: list[str],
+    vector_store: VectorStore,
+    top_k: int,
+    ref_key: str,
+) -> tuple[str, dict]:
+    """
+    Retrieve chunks based on similarity only.
+
+    Mutliple queries allowed, first with top_k retrieved chunks, the next ones with one chunk.
+    """
+    retrieved_chunks = []
+    seen_point_ids = set()
+    info = dict()
+
+    for i, query in enumerate(queries):
+        current_k = top_k if i == 0 else 1
+        retriever = retriever_factory(
+            vector_store=vector_store,
+            ref_key=ref_key,
+            ref_value=ref_value,
+            top_k=current_k,
+            exclude_point_ids=list(seen_point_ids) if seen_point_ids else None
+        )
+
+        chunks = await retriever.ainvoke(query)
+        for chunk in chunks:
+            point_id = chunk.metadata["chunk_id"]
+
+            if point_id not in seen_point_ids:
+                seen_point_ids.add(point_id)
+                retrieved_chunks.append(chunk)
+
+    info["n_chunks"] = len(retrieved_chunks)
+    info["context_chars"] = sum(len(chunk.page_content) for chunk in retrieved_chunks)
+
+    return retrieved_chunks, info
+
+
+# --------------------------------------------------------------------------- #
 # Extraction for one reference
 # --------------------------------------------------------------------------- #
 async def extract_one(
@@ -144,61 +314,103 @@ async def extract_one(
     ref_value: str,
     year: int,
     chain: Runnable,
+    selector_chain: Runnable | None,
     queries: list[str],
     top_k: int,
     vector_store: VectorStore,
     structured_output: BaseModel,
-    semaphore: asyncio.Semaphore
+    semaphore: asyncio.Semaphore,
+    retrieval: DictConfig,
+    parts_index: dict[str, list[dict]],
 ) -> dict:
     """
-    Extract data from the document reference using multiple queries.
-    - First query fetches top_k chunks.
-    - Subsequent queries fetch 1 unique chunk each (if not already retrieved).
+    Extract data from one document reference.
+
+    - `structured` mode: structural context (anchors, selector, similarity).
+    - `similarity` mode: top_k chunks of the first query, then one unique chunk per
+      subsequent query (legacy behaviour, used by the other extraction types).
     """
     extracted_data = {field_name: None for field_name in structured_output.model_fields}
     row = {
         "reference": ref_value,
         "anneeSignature": year,
-        "n_chunks": 0,
         "erreur": None,
         **extracted_data
     }
     async with semaphore:
         try:
-            if not queries:
-                row["erreur"] = "Aucune requête fournie."
-                return row
+            if retrieval.mode == "structured":
+                parts = parts_index.get(ref_value)
+                if not parts:
+                    row["erreur"] = "Aucune section retrouvée pour cette référence."
+                    return row
 
-            # Chunk id = point id
-            retrieved_chunks = []
-            seen_point_ids = set()
-            point_id = 0
-
-            for i, query in enumerate(queries):
-                current_k = top_k if i == 0 else 1
-                retriever = retriever_factory(
+                context_text, info = await structured_context(
+                    ref_value=ref_value,
+                    parts=parts,
+                    retrieval=retrieval,
+                    selector_chain=selector_chain,
+                    queries=queries,
                     vector_store=vector_store,
                     ref_key=ref_key,
-                    ref_value=ref_value,
-                    top_k=current_k,
-                    exclude_point_ids=list(seen_point_ids) if seen_point_ids else None
                 )
+                if len(context_text) > retrieval.max_context_chars:
+                    # The conservative selection still exceeds the safety ceiling: the
+                    # structural layers failed to bound this document, so use chunks.
+                    logger.warning(
+                        f"[{ref_value}] structured context above "
+                        f"{retrieval.max_context_chars} chars ({len(context_text)}), "
+                        "falling back to chunk retrieval"
+                    )
+                    retrieved_chunks, _ = await flat_context(
+                        ref_value=ref_value,
+                        queries=queries,
+                        vector_store=vector_store,
+                        top_k=top_k,
+                        ref_key=ref_key,
+                    )
+                    if not retrieved_chunks:
+                        row["erreur"] = "Aucun chunk retrouvé pour cette référence."
+                        return row
+                    context_text = "\n\n".join(
+                        chunk.page_content for chunk in retrieved_chunks
+                    )
+                    info = {
+                        "mode": "flat_fallback",
+                        "anchor_source": info.get("anchor_source"),
+                        "n_parts": info.get("n_parts"),
+                        "n_anchor_parts": 0,
+                        "n_selected_parts": 0,
+                        "n_sibling_parts": 0,
+                        "n_similarity_parts": 0,
+                        "n_context_parts": len(retrieved_chunks),
+                        "n_chunks": len(retrieved_chunks),
+                        "context_chars": len(context_text),
+                    }
+                row.update(info)
+                n_context = info["n_context_parts"]
 
-                chunks = await retriever.ainvoke(query)
-                for chunk in chunks:
-                    point_id = chunk.metadata["chunk_id"]
+            else:
+                row["n_chunks"] = 0
+                if not queries:
+                    row["erreur"] = "Aucune requête fournie."
+                    return row
 
-                    if point_id not in seen_point_ids:
-                        seen_point_ids.add(point_id)
-                        retrieved_chunks.append(chunk)
+                retrieved_chunks, info = await flat_context(
+                    ref_value=ref_value,
+                    queries=queries,
+                    vector_store=vector_store,
+                    top_k=top_k,
+                    ref_key=ref_key,
+                )
+                row.update(info)
 
-            row["n_chunks"] = len(retrieved_chunks)
+                if not retrieved_chunks:
+                    row["erreur"] = "Aucun chunk retrouvé pour cette référence."
+                    return row
 
-            if not retrieved_chunks:
-                row["erreur"] = "Aucun chunk retrouvé pour cette référence."
-                return row
-
-            context_text = "\n\n".join(chunk.page_content for chunk in retrieved_chunks)
+                context_text = "\n\n".join(chunk.page_content for chunk in retrieved_chunks)
+                n_context = len(retrieved_chunks)
 
             res = await chain.ainvoke(
                 {"context": context_text},
@@ -207,7 +419,7 @@ async def extract_one(
                     "run_name": f"extraction-{ref_value}",
                     "metadata": {
                         "reference": ref_value,
-                        "n_chunks": len(retrieved_chunks),
+                        "n_chunks": n_context,
                         "year": year
                     }
                 }
@@ -249,11 +461,14 @@ async def process_shard(
     extraction_dir: str,
     n_shards: int,
     chain: Runnable,
+    selector_chain: Runnable | None,
     services: ServiceContainer,
     queries: list[str],
     top_k: int,
     structured_output: BaseModel,
     semaphore: asyncio.Semaphore,
+    retrieval: DictConfig,
+    parts_index: dict[str, list[dict]],
 ) -> pd.DataFrame:
     """
     Treat a single shard with possible cache/restart.
@@ -279,11 +494,15 @@ async def process_shard(
             ref_value=ref,
             year=year,
             chain=chain,
+            selector_chain=selector_chain,
             queries=queries,
             top_k=top_k,
             structured_output=structured_output,
             vector_store=services.vector_store,
-            semaphore=semaphore)
+            semaphore=semaphore,
+            retrieval=retrieval,
+            parts_index=parts_index,
+        )
         for ref in ref_batch
     ]
     new_rows = await tqdm_asyncio.gather(
@@ -321,8 +540,10 @@ async def process_year(
     cfg: DictConfig,
     services: ServiceContainer,
     chain: Runnable,
+    selector_chain: Runnable | None,
     queries: list[str],
-    structured_output: BaseModel
+    structured_output: BaseModel,
+    retrieval: DictConfig,
 ) -> int:
     """
     Returns the number of references that failed.
@@ -350,6 +571,16 @@ async def process_year(
         logger.warning(f"[{args.year}] No reference found.")
         return 0
 
+    # Structural parts of the year (structured mode only): one S3 pass, bounded memory
+    parts_index: dict[str, list[dict]] = {}
+    if retrieval.mode == "structured":
+        parts_index = await asyncio.to_thread(
+            load_parts_index,
+            services.fs,
+            retrieval.parts_path,
+            refs,
+        )
+
     # Runing shards
     semaphore = asyncio.Semaphore(args.concurrency)
     shard_dfs = []
@@ -365,11 +596,14 @@ async def process_year(
             extraction_dir=extraction_dir,
             n_shards=n_shards,
             chain=chain,
+            selector_chain=selector_chain,
             services=services,
             queries=queries,
             top_k=args.top_k,
             structured_output=structured_output,
-            semaphore=semaphore
+            semaphore=semaphore,
+            retrieval=retrieval,
+            parts_index=parts_index,
         )
         shard_dfs.append(shard_df)
 
@@ -388,6 +622,11 @@ async def process_year(
 # Main functions
 # --------------------------------------------------------------------------- #
 async def main_async(cfg: DictConfig) -> int:
+    # Retrieval profile of the requested type (mode, collection, anchors, ...)
+    retrieval = load_retrieval(cfg)
+    if retrieval.get("collection"):
+        cfg.vector_storage.qdrant_collection = retrieval.collection
+
     # Connection to external services
     services = ServiceContainer(cfg)
 
@@ -406,6 +645,18 @@ async def main_async(cfg: DictConfig) -> int:
         stop_after_attempt=cfg.args.llm_retries, wait_exponential_jitter=True
     )
 
+    # Outline selector (structured mode only)
+    selector_chain = None
+    if retrieval.mode == "structured":
+        selector_prompt = create_prompt(
+            system_prompt_file=retrieval.selector_system_prompt_file,
+            user_prompt_file=retrieval.selector_user_prompt_file,
+        )
+        selector_llm = services.llm.with_structured_output(SelectedSections)
+        selector_chain = (selector_prompt | selector_llm).with_retry(
+            stop_after_attempt=cfg.args.llm_retries, wait_exponential_jitter=True
+        )
+
     # Extraction ready
     queries = create_queries(query_file=cfg.prompts.query_file)
 
@@ -415,8 +666,10 @@ async def main_async(cfg: DictConfig) -> int:
         cfg=cfg,
         services=services,
         chain=chain,
+        selector_chain=selector_chain,
         queries=queries,
-        structured_output=structured_output
+        structured_output=structured_output,
+        retrieval=retrieval,
     )
 
     return total_errors
