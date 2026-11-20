@@ -63,23 +63,17 @@ Before finalizing any changes, self-audit against these criteria:
 The S3 backend is **MinIO**, not AWS: endpoint `https://minio.lab.sspcloud.fr`, region `us-east-1` (see `core/config.py`). S3 credentials are already in the bash environment.
 
 - **Read**: you may read **anything** under `s3://mateomorin/legifrance/**`
-  - `metadata/`, `documents/`, `data_heures_supp/`, and any other content in
-  the folder. Read-only, in-memory diagnostics (download a file, parse it in
-  memory) are always allowed.
-- **Write**: you **must not write to S3** — not via a shell command and
-  not by running any script that writes — **without explicit prior validation
-  from the user.** Run them only after the user has approved that specific run.
+  - `metadata/`, `documents/`, `data_heures_supp/`, and any other content in the folder. Read-only, in-memory diagnostics (download a file, parse it in memory) are always allowed.
+- **Write**: you **must not write to S3** — not via a shell command and not by running any script that writes — **without explicit prior validation from the user.** Run them only after the user has approved that specific run.
 
 ---
 
 ## 6. Qdrant access policy — QUERY freely, WRITE only with approval
 
-The vector data storage is based on Qdrant, credentials are hidden in `.env`. You can load the `.env` file into scripts for interacting with Qdrant. Here are the rules: 
+The vector data storage is based on Qdrant, credentials are hidden in `.env`. You can load the `.env` file into scripts for interacting with Qdrant. Here are the rules:
 
 - **Query**: you may query **anything** in Qdrant` (payloads, vectors, collections, ...), as long as the requests are not too heavy or too numerous.
-- **Write**: you **must not write to Qdrant** — not via a shell command and
-  not by running any script that writes — **without explicit prior validation
-  from the user.** Run them only after the user has approved that specific run.
+- **Write**: you **must not write to Qdrant** — not via a shell command and not by running any script that writes — **without explicit prior validation from the user.** Run them only after the user has approved that specific run.
 
 ---
 

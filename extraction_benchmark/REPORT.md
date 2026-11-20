@@ -1,9 +1,6 @@
 # Extraction benchmark — context strategies
 
-Four ways of building the context of an overtime-majoration extraction, on three
-samples of agreements whose whole text fits under 20k, 30k and 40k characters.
-Same prompt, same schema, same model (`mistral-medium-2508`), same temperature,
-same per-document budget (the ceiling under test) for every arm.
+Four ways of building the context of an overtime-majoration extraction, on three samples of agreements whose whole text fits under 20k, 30k and 40k characters. Same prompt, same schema, same model (`mistral-medium-2508`), same temperature, same per-document budget (the ceiling under test) for every arm.
 
 | Arm | Context |
 | --- | --- |
