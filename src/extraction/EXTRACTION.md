@@ -117,8 +117,10 @@ starting template.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `LLM_API_URL` | yes | OpenAI-compatible base URL for the LLM + embeddings |
-| `LLM_API_KEY` | yes | API key for the LLM endpoint |
+| `LLM_API_URL` | yes | OpenAI-compatible base URL for the LLM |
+| `LLM_API_KEY` | yes | API key for the LLM endpoint|
+| `EMBED_API_URL` | yes | OpenAI-compatible base URL for the embeddings |
+| `EMBED_API_KEY` | yes | API key for the EMBED endpoint|
 | `QDRANT_API_URL` | no (defaults to `http://qdrant:6333`) | Qdrant endpoint |
 | `QDRANT_API_KEY` | no | Qdrant API key, if the cluster requires auth |
 | `AWS_ACCESS_KEY_ID` | yes (S3) | S3 / MinIO access key |

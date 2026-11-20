@@ -17,7 +17,7 @@ spec:
             arguments:
               parameters:
                 - name: type
-                  value: contingent_evolution
+                  value: majoration
                 - name: year
                   value: "{{item}}"
                 - name: concurrency
@@ -63,6 +63,10 @@ spec:
             valueFrom: { secretKeyRef: { name: llm-lab-api, key: LLM_API_URL } }
           - name: LLM_API_KEY
             valueFrom: { secretKeyRef: { name: llm-lab-api, key: LLM_API_KEY } }
+          - name: EMBED_API_URL
+            valueFrom: { secretKeyRef: { name: llm-lab-api, key: LLM_API_URL } }
+          - name: EMBED_API_KEY
+            valueFrom: { secretKeyRef: { name: llm-lab-api, key: LLM_API_KEY } }
           - name: QDRANT_API_URL
             valueFrom: { secretKeyRef: { name: qdrant-creds, key: QDRANT_API_URL, optional: true } }
           - name: QDRANT_API_KEY
@@ -79,3 +83,9 @@ spec:
             valueFrom: { secretKeyRef: { name: langfuse-creds, key: LANGFUSE_PUBLIC_KEY } }
           - name: LANGFUSE_BASE_URL
             valueFrom: { secretKeyRef: { name: langfuse-creds, key: LANGFUSE_BASE_URL } }
+          - name: MLFLOW_TRACKING_USERNAME
+            valueFrom: { secretKeyRef: { name: mlflow-creds, key: MLFLOW_TRACKING_USERNAME } }
+          - name: MLFLOW_TRACKING_PASSWORD
+            valueFrom: { secretKeyRef: { name: mlflow-creds, key: MLFLOW_TRACKING_PASSWORD } }
+          - name: MLFLOW_TRACKING_URI
+            valueFrom: { secretKeyRef: { name: mlflow-creds, key: MLFLOW_TRACKING_URI } }
