@@ -2,7 +2,7 @@ defaults:
   - _self_
 
 args:
-  type: contingent        # Information to extract (name of a subfolder in the project)
+  type: majoration        # Information to extract (name of a subfolder in the project)
   year: 2023              # Signature year to treat
   top_k: 5                # Number of chunks per document (similarity mode)
   concurrency: 5          # Max number of (retrieval + LLM) per process
